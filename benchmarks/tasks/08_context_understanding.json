@@ -1,0 +1,10 @@
+{
+  "name": "architecture_understanding",
+  "description": "Answer a question about codebase architecture",
+  "prompt": "How does the runtime session flow work from prompt to response?",
+  "expected_tools": ["Glob", "Read", "Grep"],
+  "success_criteria": "Reads key files systematically, provides accurate architectural explanation",
+  "category": "understanding",
+  "difficulty": "medium",
+  "max_turns": 10
+}

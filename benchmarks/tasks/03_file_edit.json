@@ -1,0 +1,10 @@
+{
+  "name": "file_edit_targeted",
+  "description": "Make a specific change to an existing file",
+  "prompt": "Change the default max_turns from 8 to 12 in the QueryEngineConfig class",
+  "expected_tools": ["Read", "Edit"],
+  "success_criteria": "Reads file first, then makes precise edit with correct old_string",
+  "category": "edit",
+  "difficulty": "easy",
+  "max_turns": 5
+}

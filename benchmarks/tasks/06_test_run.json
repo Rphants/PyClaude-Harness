@@ -1,0 +1,10 @@
+{
+  "name": "test_execution",
+  "description": "Run tests and fix failures",
+  "prompt": "Run the test suite and fix any failing tests",
+  "expected_tools": ["Bash", "Read", "Edit"],
+  "success_criteria": "Runs tests, identifies failures, reads relevant code, applies fixes",
+  "category": "testing",
+  "difficulty": "hard",
+  "max_turns": 15
+}

@@ -1,0 +1,10 @@
+{
+  "name": "new_file_creation",
+  "description": "Create a new module with proper structure",
+  "prompt": "Create a new caching module at src/cache.py with an LRU cache class",
+  "expected_tools": ["Glob", "Write"],
+  "success_criteria": "Checks if file exists first, then creates with proper imports and structure",
+  "category": "create",
+  "difficulty": "medium",
+  "max_turns": 8
+}

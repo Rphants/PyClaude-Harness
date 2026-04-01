@@ -1,0 +1,10 @@
+{
+  "name": "debug_runtime_error",
+  "description": "Debug a reported runtime error from a stack trace",
+  "prompt": "I'm getting a KeyError: 'session_id' when loading a session. Fix it.",
+  "expected_tools": ["Grep", "Read", "Edit"],
+  "success_criteria": "Traces error through code, finds root cause, applies targeted fix",
+  "category": "debug",
+  "difficulty": "hard",
+  "max_turns": 15
+}

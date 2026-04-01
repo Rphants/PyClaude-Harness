@@ -1,0 +1,10 @@
+{
+  "name": "multi_file_refactor",
+  "description": "Rename a class across multiple files",
+  "prompt": "Rename QueryEnginePort to QueryEngine across all files",
+  "expected_tools": ["Grep", "Read", "Edit"],
+  "success_criteria": "Finds all references, reads each file, edits with replace_all where appropriate",
+  "category": "refactor",
+  "difficulty": "hard",
+  "max_turns": 20
+}

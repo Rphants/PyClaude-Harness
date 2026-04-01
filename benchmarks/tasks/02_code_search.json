@@ -1,0 +1,10 @@
+{
+  "name": "code_search_regex",
+  "description": "Search for a specific pattern across codebase files",
+  "prompt": "Find all usages of the load_session function across the project",
+  "expected_tools": ["Grep", "Read"],
+  "success_criteria": "Identifies all call sites with file and line numbers",
+  "category": "search",
+  "difficulty": "medium",
+  "max_turns": 8
+}

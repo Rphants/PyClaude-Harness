@@ -1,0 +1,10 @@
+[project]
+name = "pyclaude-harness"
+version = "0.1.0"
+description = "Self-improving harness optimization for Claude Code"
+requires-python = ">=3.11"
+license = "MIT"
+
+[project.scripts]
+pyclaude-eval = "prepare:main"
+pyclaude-optimize = "harness.orchestrator:main"

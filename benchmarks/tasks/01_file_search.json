@@ -1,0 +1,10 @@
+{
+  "name": "file_search_basic",
+  "description": "Find a specific file by name pattern in a codebase",
+  "prompt": "Find all Python files that contain 'query' in their name",
+  "expected_tools": ["Glob"],
+  "success_criteria": "Returns list of matching files without reading unnecessary files",
+  "category": "search",
+  "difficulty": "easy",
+  "max_turns": 5
+}
