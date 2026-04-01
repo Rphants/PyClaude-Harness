@@ -61,3 +61,34 @@ REVIEW-CLAUDE.md    — Claude's review findings
 - Remote: https://github.com/Rphants/PyClaude-Harness.git
 - PAT: [REDACTED — use git credential helper or env var]
 - Always push after completing work
+
+## Slack Communication (CRITICAL — always post status updates)
+All agents post to **#development-team** (C06RSE25LKT) after completing tasks.
+
+### How to post from Claude Code or Codex:
+```bash
+curl -s -X POST "$SLACK_WEBHOOK_URL" \
+  -H 'Content-Type: application/json' \
+  -d '{"text": "[CLAUDE-CODE] Your status message here"}'
+```
+
+### Protocol:
+1. **Before starting work**: Post what you're about to do
+2. **After completing work**: Post summary + results
+3. **On errors**: Post what went wrong so other agents can help
+4. **Prefix your messages**: `[CLAUDE-CODE]` or `[CODEX]` or `[COWORK]`
+
+### Channel: #development-team
+- Webhook: Set SLACK_WEBHOOK_URL env var (see .env or credential store)
+- Channel ID: C06RSE25LKT
+- Ronald: U06RG1RJ78C
+- Andres: U08JJ9RGNSV
+
+### Example workflow:
+1. Cowork dispatches Claude Code: "Fix the P0 bugs"
+2. Claude Code posts to Slack: "[CLAUDE-CODE] Starting P0 fixes on fix/codex-p0-review"
+3. Claude Code finishes, posts: "[CLAUDE-CODE] Done. 4 P0s fixed. 28/28 tests pass. Branch pushed."
+4. Cowork reads Slack, dispatches Codex: "Verify the fixes"
+5. Codex posts: "[CODEX] Verifying P0 fixes..."
+6. Codex finishes: "[CODEX] PASS: All 4 P0s verified. Ready for merge."
+7. Ronald sees entire conversation in Slack in real-time.
