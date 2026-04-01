@@ -1,51 +1,72 @@
 # PyClaude-Harness — Team Mission
 
 ## The Team
-| Agent | Model | Role |
-|-------|-------|------|
-| **Ronald** | Human | Founder, Commander, Vision |
-| **Cowork** | Claude Opus 4.6 | Orchestrator, Router, Strategy |
-| **Claude Code** | Claude Opus 4.6 | Primary Developer, Code Writer |
-| **Codex** | GPT-5.4 | Adversarial Reviewer, Verifier |
+
+| Callsign | Model | Role | Capacity |
+|----------|-------|------|----------|
+| **RONALD** | Human | Commander. Strategy, spend, final say. | 1 |
+| **COWORK** | Claude Opus 4.6 | Orchestrator. Dispatches, monitors, Chrome/Slack/Cloudflare. | 2 instances |
+| **CLAUDE CODE** | Claude Opus 4.6 | Primary developer. Features, fixes, refactors. | 2 instances (cmux) |
+| **CODEX** | GPT-5.4 | Adversarial reviewer. Verification, regression testing, strategy. | Up to 4 instances |
+
+Total agent capacity: 2 Cowork + 2 Claude Code + 4 Codex = **8 parallel AI agents**.
 
 ## Mission
-Build the world's first self-improving AI development system.
-Not a tool. Not a framework. A **living system** that gets better every hour it runs.
+
+Build AI-powered products that generate revenue while the agents that build them keep getting smarter.
+
+## The Play
+
+1. **AgentRVM runs internally first** — We use our own AI voicemail to run real wholesale campaigns. We spend our own money, track callbacks, measure ROI. We prove the model works.
+2. **Prove ROI with real numbers** — Once we have callback rates, deal conversions, and cost-per-deal data from our own campaigns, we have proof no competitor can fake.
+3. **Sell to non-competitive markets** — Package the proven system as a service for wholesalers in markets we don't operate in. They get a tested product. We get recurring revenue with zero market conflict.
+4. **Scale with AI agents** — The same agents that built the product run the service. Onboarding, support, optimization — all agent-driven. Near-zero marginal cost per customer.
+
+## Revenue Reality
+
+| Metric | Value |
+|--------|-------|
+| Current daily income | ~$2,500/day (~$75K/month) |
+| AgentRVM status | Pre-launch (all PRs merged, needs production deploy) |
+| Target | Prove model internally → sell to external wholesalers |
+| 90-day goal | $83,333+ MRR ($1M ARR) — see SPRINT-1M.md |
 
 ## Goals (in order)
-1. **Maximum Revenue** — Ship AgentRVM to production. Launch ads. Get paying customers. Every day we're not live is money left on the table.
-2. **Maximum Profitability** — Use AI agents (us) to replace manual work. Claude + Codex run 24/7 for pennies in API costs. Zero salaries. Infinite leverage.
-3. **Full Autonomy** — PyClaude-Harness optimizes itself. Agents review each other. The system improves while Ronald sleeps. The gap between "idea" and "shipped" shrinks to minutes.
 
-## What We're Building
-A multi-agent system where:
-- Claude writes code
-- Codex reviews it
-- The harness measures performance
-- The loop runs forever, keeping improvements, discarding failures
-- Every improvement compounds — better prompts → better code → better reviews → better prompts
+1. **DEPLOY AND PROVE** — Ship AgentRVM to production. Run our own RVM campaigns. Get real callback data.
+2. **REVENUE FROM PROOF** — Use proven ROI numbers to sell the service to wholesalers in non-competitive markets.
+3. **SCALE WITH AGENTS** — AI agents handle onboarding, campaign optimization, and support. Each new customer costs nearly nothing to serve.
+4. **SELF-IMPROVING SYSTEM** — PyClaude-Harness optimizes the agents that build and run everything. The system compounds.
 
-This isn't just an optimization experiment. This is the foundation for:
-- **AgentRVM**: AI voicemail that sells itself
-- **Same Day Agents**: An agency where the agents ARE the agency
-- **Every future product**: Built faster, better, cheaper because the system that builds them keeps getting smarter
+## Coordination Files (READ THESE)
+
+| File | Purpose |
+|------|---------|
+| **WAR-RULES.md** | Hard rules every agent follows. Non-negotiable. |
+| **SPRINT-BOARD.md** | Live task board. Check ownership before starting work. |
+| **AGENT-MAILBOX.md** | Inter-agent communication log. Read before work, write after. |
+| **CLAUDE.md** | Agent brain — architecture, known issues, project context. |
+| **CODEX.md** | Agent brain (Codex-specific context). |
+| **SPRINT-1M.md** | 90-day plan to $1M ARR. |
 
 ## Rules
-- Ship fast, fix forward
-- Cross-model review on every PR (Claude writes, Codex reviews)
-- No human bottlenecks — if the system can decide, the system decides
-- Keep improving. Never stop. The loop is infinite.
+
+- Revenue over everything. Tier 1 tasks before Tier 2 before Tier 3.
+- Ship fast, fix forward.
+- Cross-model review on every PR. No exceptions.
+- No human bottlenecks — if the system can decide, the system decides.
+- Post status to AGENT-MAILBOX.md + Slack after every task. Invisible work is wasted work.
+- Follow WAR-RULES.md. It's law.
 
 ## Status: April 1, 2026
+
 - PyClaude-Harness: LIVE (github.com/Rphants/PyClaude-Harness)
-- Multi-agent coordination: ACTIVE
-- P0 fixes: IN PROGRESS
-- Revenue: $0 (pre-launch)
-- Target: First paying customer by April 15
+- Multi-agent war room: ACTIVE (cmux, 5 panes)
+- Existing income: ~$2,500/day
+- AgentRVM: All PRs merged, needs production deploy
+- Facebook ads: Strategy + creatives ready, not launched
+- Next milestone: Deploy production → Run internal RVM campaigns → Prove ROI
 
 ---
 
-*"The best time to plant a tree was 20 years ago. The second best time is right now."*
-*The best AI system was started today. It'll be 10x better by tomorrow.*
-
-Let's go. 🚀
+*We don't sell promises. We sell proof. Run it ourselves first, then sell the results.*

@@ -42,9 +42,18 @@ Cowork (Claude Opus 4.6) acts as router between agents.
   - P0-4 PASS — `harness/orchestrator.py` now stashes before reset (`git stash --include-untracked` -> `git reset --hard HEAD~1` -> `git stash pop`).
   - Required runs: `python3 -m pytest tests/ -v` => 28 passed; `python3 prepare.py` => composite_score `0.928130`, tool_accuracy `1.0000`.
 
+[CODEX/GPT-5.4] 2026-04-01T15:40:33-0500 VERIFY — Checked new uncommitted changes on `fix/codex-p0-review`:
+  - Working tree: staged delete of `optimize.py`, unstaged `prepare.py` metric rewrite, plus new `src/coordinator/cmux.py` + `tests/test_cmux.py`.
+  - P0-2 WORKTREE PASS — with `jq '.tool_definitions = {}' optimize.json | python3 prepare.py --config ...`, `tool_accuracy` now prints `0.0000`; `python3 -m pytest tests/ -q` => 31 passed.
+  - P0-3 WORKTREE PARTIAL — `optimize.py` is staged for deletion, but live docs/comments still reference it in `README.md`, `program.md`, `CLAUDE.md`, `CODEX.md`, `prepare.py`, `harness/orchestrator.py`, and `harness/proposer.py`.
+  - Branch HEAD (clean clone at `ac111fc`) still has the old failures: `python3 prepare.py` with empty `tool_definitions` prints `tool_accuracy: 1.0000`, and `python3 -m harness.orchestrator --max-experiments 2` still crashes on experiment 2 with `KeyError: 'score'`.
+  - New CMUX code is additive only; local suite with the new tests passes (`31 passed`).
+
 [CODEX/GPT-5.4] 2026-04-01T15:40:12-0500 VERIFY — Checked new deltas on `fix/codex-p0-review` after the prior verification:
   - New commits `685706c` and `ac111fc` are docs-only (`MISSION.md`, `CLAUDE.md`, `CODEX.md`); no runtime impact found.
   - New worktree change in `prepare.py` fixes the P0-2 ground-truth metric: `python3 prepare.py --config <empty-tool-defs>` now reports `tool_accuracy: 0.0000`.
   - Remaining regression: `harness.evaluator.run_evaluation()` still computes tool accuracy with the old formula, so the optimizer diagnostics disagree with `prepare.py` (`prepare_tool_accuracy 0.0` vs `harness_tool_accuracy 1.0` on the same empty-tool-defs config).
   - `optimize.py` is staged for deletion, which helps the P0-3 cleanup, but stale `optimize.py` references remain in `prepare.py`, `harness/orchestrator.py`, and `harness/proposer.py`.
   - Current test run: `python3 -m pytest -q` => 31 passed.
+
+[CODEX/GPT-5.4] 2026-04-01T20:41:15Z DONE — Assessed `Rphants/agentrvm` deploy readiness from GitHub because `~/Downloads/agentrvm` is missing locally. Wrote `AGENTRVM-DEPLOY-STATUS.md`: static Hosting build looks healthy based on successful Actions runs, Firebase config is present, but full production deploy is blocked by Hosting-only CI/CD that does not deploy `functions/voice-demo`, Firestore rules, or extension config, plus backend secret/env documentation gaps.

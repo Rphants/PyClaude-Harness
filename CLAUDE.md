@@ -1,19 +1,32 @@
 # PyClaude-Harness — Agent Brain
 
-## Multi-Agent System
-You are one of THREE agents working on this repo. Know your teammates:
+## MANDATORY READS (before ANY work)
+1. **WAR-RULES.md** — Hard rules. Non-negotiable. Defines workflow, priorities, commit rules.
+2. **SPRINT-BOARD.md** — Live task board. Check ownership. Claim before starting.
+3. **AGENT-MAILBOX.md** — Inter-agent comms. Read first, write when done.
+4. **MISSION.md** — Goals, strategy, revenue context (~$2,500/day existing income).
 
-| Agent | Model | Location | CLI | Role |
-|-------|-------|----------|-----|------|
-| **Cowork** | Claude Opus 4.6 | Cowork desktop app (VM) | N/A — orchestrator | Router, coordinator, Chrome browser access |
-| **Claude Code** | Claude Opus 4.6 | Ronald's Mac | `/Users/ronaldbigger/.local/bin/claude` | Code writing, reviews, file edits |
-| **Codex** | GPT-5.4 | Ronald's Mac | `/opt/homebrew/bin/codex` | Code review, adversarial testing, web browsing via Chrome DevTools |
+## Multi-Agent System
+You are part of an 8-agent team. Know your teammates:
+
+| Callsign | Model | Location | CLI | Role |
+|----------|-------|----------|-----|------|
+| **COWORK** | Claude Opus 4.6 | Cowork desktop app (VM) | N/A | Orchestrator, router, Chrome/Slack/Cloudflare |
+| **CLAUDE-1** | Claude Opus 4.6 | Mac (cmux surface:1) | `claude -p` | Primary coder |
+| **CLAUDE-2** | Claude Opus 4.6 | Mac (cmux surface:6) | `claude -p` | Secondary coder |
+| **CODEX-1** | GPT-5.4 | Mac (cmux surface:7) | `codex exec --full-auto` | Adversarial reviewer |
+| **CODEX-2** | GPT-5.4 | Mac (cmux surface:4) | `codex exec --full-auto` | Regression tester |
+| **MONITOR** | N/A | Mac (cmux surface:3) | `tail -f` | Passive display |
+
+Capacity: 2 Cowork + 2 Claude Code + 4 Codex = 8 parallel agents. Scale as needed.
 
 ## Communication Protocol
-- **AGENT-MAILBOX.md** — Shared state file in repo root. Read it FIRST before starting work.
-- When you finish a task, append your status: `[AGENT_NAME] [ISO_TIMESTAMP] [STATUS] — [SUMMARY]`
-- If another agent left findings for you, acknowledge and respond in the mailbox.
-- Cowork acts as the message bus between Claude Code and Codex.
+- **AGENT-MAILBOX.md** — Read FIRST. Write when DONE.
+- Format: `[CALLSIGN] [ISO-8601] [STATUS] — [One-line summary]`
+- Statuses: `STARTING`, `DONE`, `BLOCKED`, `VERIFY`, `FAILED`, `HANDOFF`
+- **SPRINT-BOARD.md** — Claim tasks before starting. Update status when done.
+- **Slack #development-team** — Post for Ronald's visibility. Prefix: `[CALLSIGN]`
+- **COWORK is the router.** Don't dispatch other agents directly.
 
 ## Who Is Ronald
 - **Name**: Ronald Bigger
@@ -44,12 +57,19 @@ REVIEW-CODEX.md     — Codex's review findings
 REVIEW-CLAUDE.md    — Claude's review findings
 ```
 
-## Known Issues (from v1 reviews)
-- P0: Evaluator is simulated — scores on heuristics, not real Claude API calls
-- P0: TOKEN_BUDGET→1 gives perfect score (trivially gameable)
-- P0: load_harness_config() does exec_module() on arbitrary Python
-- P1: tool_accuracy always 1.0 (unnecessary_tools list never populated)
-- P1: git reset --hard in orchestrator destroys uncommitted results.tsv
+## Known Issues (Updated 2026-04-01)
+
+### Fixed (on fix/codex-p0-review, not yet pushed — secret scanning blocker)
+- ~~P0-1: orchestrator proposals didn't modify optimize.json~~ → FIXED (apply_proposal())
+- ~~P0-2: tool_accuracy always 1.0~~ → FIXED (F1 score in prepare.py)
+- ~~P0-3: exec_module() on arbitrary Python~~ → FIXED (migrated to optimize.json)
+- ~~P0-4: git reset --hard destroys results.tsv~~ → FIXED (stash/restore)
+
+### Open
+- evaluator.py still uses OLD tool_accuracy formula (disagrees with prepare.py)
+- KeyError: 'score' in orchestrator experiment 2 (error path missing score key)
+- Stale optimize.py references in README, program.md, harness files
+- GitHub push blocked by Slack webhook URL in CLAUDE.md/CODEX.md on branch
 
 ## Branch Convention
 - `main` — stable, CI must pass
