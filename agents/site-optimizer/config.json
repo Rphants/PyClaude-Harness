@@ -1,0 +1,60 @@
+{
+  "agent": "site-optimizer",
+  "version": 1,
+  "created": "2026-04-01",
+  "target_repo": "~/agentrvm",
+  "target_url": "https://agentrvm.com",
+  "framework": "nextjs-static-export",
+  "hosting": "firebase",
+
+  "current_state": {
+    "hero_headline": "AI Ringless Voicemail",
+    "hero_subheadline": "Skip cold calls, get callbacks",
+    "cta_text": "Get Early Access",
+    "has_audio_demo": false,
+    "has_social_proof": false,
+    "has_roi_calculator": false,
+    "has_video_testimonial": true,
+    "form_position": "below-hero",
+    "color_scheme": "dark-orange-gradient"
+  },
+
+  "baseline_metrics": {
+    "conversion_rate": null,
+    "bounce_rate": null,
+    "avg_time_on_page": null,
+    "audio_play_rate": null,
+    "mobile_conversion": null,
+    "desktop_conversion": null,
+    "lighthouse_score": null,
+    "note": "Baseline not yet measured — site needs production deploy first"
+  },
+
+  "posthog": {
+    "project_key": null,
+    "feature_flag_prefix": "site-opt-",
+    "conversion_event": "waitlist_signup",
+    "min_sample_size": 100
+  },
+
+  "experiment_count": 0,
+  "improvements_kept": 0,
+  "experiments_discarded": 0,
+
+  "priority_queue": [
+    "audio-demo-below-hero",
+    "specificity-headline",
+    "above-fold-form",
+    "social-proof-counter",
+    "urgency-cta",
+    "roi-calculator"
+  ],
+
+  "vibevoice": {
+    "sample_audio_path": null,
+    "api_endpoint": "/v1/synthesis",
+    "presets_endpoint": "/v1/presets",
+    "voice_lab_repo": "agentrvm-voice-lab",
+    "note": "Need Ronald to generate a sample .mp3 from VibeVoice for the landing page"
+  }
+}
