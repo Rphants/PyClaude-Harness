@@ -13,3 +13,4 @@ results.tsv
 *.swp
 *.swo
 node_modules/
+.pytest_cache/
