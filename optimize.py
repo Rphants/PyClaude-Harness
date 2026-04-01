@@ -24,7 +24,7 @@ from __future__ import annotations
 
 MODEL = "claude-sonnet-4-20250514"
 TEMPERATURE = 0.0
-TOKEN_BUDGET = 15_000
+TOKEN_BUDGET = 5_000
 MAX_TURNS = 15
 
 # ---------------------------------------------------------------------------
