@@ -255,10 +255,23 @@ def evaluate_all(tasks: list[BenchmarkTask], config: dict[str, Any]) -> EvalMetr
 
     avg_tokens = statistics.mean(r.tokens_used for r in results) if results else 0.0
 
-    # Tool accuracy: fraction of tool calls that were expected
+    # Tool accuracy: harmonic mean of precision and recall
+    # Precision = fraction of called tools that were expected (not unnecessary)
+    # Recall = fraction of expected tools that were actually called
     total_calls = sum(len(r.tools_called) for r in results)
     unnecessary_calls = sum(len(r.unnecessary_tools) for r in results)
-    tool_accuracy = 1.0 - (unnecessary_calls / max(total_calls, 1))
+    correct_calls = total_calls - unnecessary_calls
+    total_expected = sum(len(t.expected_tools) for t in tasks)
+
+    if total_expected == 0 and total_calls == 0:
+        tool_accuracy = 1.0  # no tools expected, none called
+    else:
+        precision = correct_calls / max(total_calls, 1)
+        recall = correct_calls / max(total_expected, 1)
+        if precision + recall > 0:
+            tool_accuracy = 2 * precision * recall / (precision + recall)
+        else:
+            tool_accuracy = 0.0
 
     avg_latency = statistics.mean(r.wall_seconds for r in results) if results else 0.0
 

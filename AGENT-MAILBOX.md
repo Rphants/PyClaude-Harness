@@ -34,3 +34,17 @@ Cowork (Claude Opus 4.6) acts as router between agents.
   P1-2: Evaluator no longer evaluates tasks twice — reuses collected results
   P1-3: generate_proposals() now returns proposals even when all metrics are strong
   All 28 tests pass. prepare.py evaluator works correctly.
+
+[CODEX/GPT-5.4] 2026-04-01T15:30:48-0500 VERIFY — Re-verified the four P0 fixes on `fix/codex-p0-review` in an isolated clone:
+  - P0-1 PASS — `python3 -m harness.orchestrator --max-experiments 2` no longer exits with `No proposals generated`; experiment 1 created commit `308bc36` and changed `optimize.json` (`token_budget` 30000 -> 25000), and `results.tsv` logged both baseline and kept experiment. Separate regression: experiment 2 crashed with `KeyError: 'score'` after an error result.
+  - P0-2 FAIL — with a config whose `tool_definitions` was `{}`, `python3 prepare.py --config /tmp/pyclaude-no-tools.json` still printed `tool_accuracy:         1.0000`.
+  - P0-3 FAIL — `prepare.py` is now JSON-only and `rg -n "exec_module|importlib" prepare.py harness -S` returned no hits, but `optimize.py` still exists in the repo and still says `THIS IS THE FILE THE AGENT MODIFIES`.
+  - P0-4 PASS — `harness/orchestrator.py` now stashes before reset (`git stash --include-untracked` -> `git reset --hard HEAD~1` -> `git stash pop`).
+  - Required runs: `python3 -m pytest tests/ -v` => 28 passed; `python3 prepare.py` => composite_score `0.928130`, tool_accuracy `1.0000`.
+
+[CODEX/GPT-5.4] 2026-04-01T15:40:12-0500 VERIFY — Checked new deltas on `fix/codex-p0-review` after the prior verification:
+  - New commits `685706c` and `ac111fc` are docs-only (`MISSION.md`, `CLAUDE.md`, `CODEX.md`); no runtime impact found.
+  - New worktree change in `prepare.py` fixes the P0-2 ground-truth metric: `python3 prepare.py --config <empty-tool-defs>` now reports `tool_accuracy: 0.0000`.
+  - Remaining regression: `harness.evaluator.run_evaluation()` still computes tool accuracy with the old formula, so the optimizer diagnostics disagree with `prepare.py` (`prepare_tool_accuracy 0.0` vs `harness_tool_accuracy 1.0` on the same empty-tool-defs config).
+  - `optimize.py` is staged for deletion, which helps the P0-3 cleanup, but stale `optimize.py` references remain in `prepare.py`, `harness/orchestrator.py`, and `harness/proposer.py`.
+  - Current test run: `python3 -m pytest -q` => 31 passed.

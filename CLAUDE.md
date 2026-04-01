@@ -30,7 +30,7 @@ Self-improving harness optimization for Claude Code, combining:
 ## Architecture
 ```
 prepare.py          — Fixed evaluator (READ-ONLY). Ground truth scoring.
-optimize.py         — Agent-editable harness config (THE OPTIMIZATION TARGET)
+optimize.json       — Agent-editable harness config (THE OPTIMIZATION TARGET)
 program.md          — Autonomous loop instructions (autoresearch pattern)
 harness/
   proposer.py       — Proposes changes (can use Claude as optimizer)
