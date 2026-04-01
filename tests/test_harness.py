@@ -106,12 +106,11 @@ class TestGenerateProposals:
     def test_avoids_already_tried(self):
         ctx = self._make_context()
         ctx.experiment_history = [
-            {"description": "add examples to system prompt"},
-            {"description": "add chain of thought"},
+            {"description": "Add tool usage examples to SYSTEM_PROMPT"},
+            {"description": "Add explicit think-then-act structure to prompt"},
         ]
         proposals = generate_proposals(ctx)
         descs = {p.change_description for p in proposals}
-        # These are the change_descriptions that correspond to the tried keys
         assert "Add tool usage examples to SYSTEM_PROMPT" not in descs
         assert "Add explicit think-then-act structure to prompt" not in descs
 
@@ -122,13 +121,13 @@ class TestGenerateProposals:
 
 class TestRunEvaluation:
     def test_returns_detailed_evaluation(self):
-        result = run_evaluation("optimize.py", Path("benchmarks/tasks"))
+        result = run_evaluation("optimize.json", Path("benchmarks/tasks"))
         assert isinstance(result, DetailedEvaluation)
         assert result.metrics.total_tasks > 0
         assert isinstance(result.task_results, list)
 
     def test_empty_tasks_dir(self, tmp_path):
-        result = run_evaluation("optimize.py", tmp_path)
+        result = run_evaluation("optimize.json", tmp_path)
         assert result.metrics.total_tasks == 0
         assert result.improvement_hints == ["Add benchmark tasks to benchmarks/tasks/"]
 

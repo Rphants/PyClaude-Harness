@@ -118,12 +118,12 @@ class TestEvalMetrics:
 
 class TestEvaluateComposite:
     def test_returns_float(self):
-        score = evaluate_composite("optimize.py", Path("benchmarks/tasks"))
+        score = evaluate_composite("optimize.json", Path("benchmarks/tasks"))
         assert isinstance(score, float)
         assert 0.0 <= score <= 1.0
 
     def test_empty_tasks_returns_zero(self, tmp_path):
-        score = evaluate_composite("optimize.py", tmp_path)
+        score = evaluate_composite("optimize.json", tmp_path)
         assert score == 0.0
 
 
@@ -133,7 +133,7 @@ class TestEvaluateComposite:
 
 class TestLoadHarnessConfig:
     def test_loads_optimize_py(self):
-        config = load_harness_config("optimize.py")
+        config = load_harness_config("optimize.json")
         assert "system_prompt" in config
         assert "tool_definitions" in config
         assert "token_budget" in config
@@ -141,8 +141,8 @@ class TestLoadHarnessConfig:
         assert len(config["system_prompt"]) > 0
 
     def test_raises_for_missing_file(self):
-        with pytest.raises(Exception):
-            load_harness_config("nonexistent.py")
+        with pytest.raises(FileNotFoundError):
+            load_harness_config("nonexistent.json")
 
 
 # ---------------------------------------------------------------------------
@@ -151,14 +151,14 @@ class TestLoadHarnessConfig:
 
 class TestEvaluateAll:
     def test_empty_tasks_returns_zeros(self):
-        config = load_harness_config("optimize.py")
+        config = load_harness_config("optimize.json")
         metrics = evaluate_all([], config)
         assert metrics.total_tasks == 0
         assert metrics.task_completion_rate == 0.0
 
     def test_returns_eval_metrics(self):
         tasks = load_tasks(Path("benchmarks/tasks"))
-        config = load_harness_config("optimize.py")
+        config = load_harness_config("optimize.json")
         metrics = evaluate_all(tasks, config)
         assert isinstance(metrics, EvalMetrics)
         assert metrics.total_tasks == len(tasks)

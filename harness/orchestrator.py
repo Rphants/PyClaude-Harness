@@ -37,7 +37,7 @@ from prepare import evaluate_composite
 
 
 RESULTS_FILE = Path("results.tsv")
-OPTIMIZE_FILE = Path("optimize.py")
+OPTIMIZE_FILE = Path("optimize.json")
 
 
 def init_results_file() -> None:
@@ -59,9 +59,9 @@ def get_git_hash() -> str:
 
 
 def git_commit(message: str) -> bool:
-    """Stage optimize.py and commit."""
+    """Stage optimize.json and commit."""
     try:
-        subprocess.run(["git", "add", "optimize.py"], check=True, timeout=10)
+        subprocess.run(["git", "add", "optimize.json"], check=True, timeout=10)
         subprocess.run(
             ["git", "commit", "-m", message],
             check=True, capture_output=True, timeout=10,
@@ -72,11 +72,21 @@ def git_commit(message: str) -> bool:
 
 
 def git_rollback() -> bool:
-    """Roll back the last commit (discard experiment)."""
+    """Roll back the last commit, stashing uncommitted work first (P0-4 fix)."""
     try:
+        # Stash any uncommitted changes (e.g. results.tsv) before reset
+        subprocess.run(
+            ["git", "stash", "--include-untracked"],
+            capture_output=True, timeout=10,
+        )
         subprocess.run(
             ["git", "reset", "--hard", "HEAD~1"],
             check=True, capture_output=True, timeout=10,
+        )
+        # Restore stashed work
+        subprocess.run(
+            ["git", "stash", "pop"],
+            capture_output=True, timeout=10,
         )
         return True
     except subprocess.CalledProcessError:
@@ -91,6 +101,34 @@ def log_result(commit: str, score: float, tasks_completed: str,
         f.write(line)
 
 
+def apply_proposal(proposal: Proposal, config_path: Path = OPTIMIZE_FILE) -> bool:
+    """Apply a proposal's changes to the config file.
+
+    Reads optimize.json, updates the section specified by the proposal,
+    and writes the result back.
+    """
+    try:
+        config = json.loads(config_path.read_text())
+    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        print(f"Failed to read config: {exc}", file=sys.stderr)
+        return False
+
+    section_key = proposal.section.lower()
+    if section_key not in config:
+        print(f"Unknown config section: {proposal.section}", file=sys.stderr)
+        return False
+
+    # Parse new_value as JSON if possible, otherwise use as raw string
+    try:
+        new_val = json.loads(proposal.new_value)
+    except (json.JSONDecodeError, TypeError):
+        new_val = proposal.new_value
+
+    config[section_key] = new_val
+    config_path.write_text(json.dumps(config, indent=2) + "\n")
+    return True
+
+
 def run_single_experiment(
     proposal: Proposal,
     baseline_score: float,
@@ -103,8 +141,10 @@ def run_single_experiment(
     """
     description = proposal.change_description
 
-    # Apply the change (in production, this modifies optimize.py)
-    # For now, we assume the caller has already modified optimize.py
+    # Apply the proposed change to optimize.json
+    if not apply_proposal(proposal):
+        return {"status": "error", "message": f"Failed to apply proposal: {description}"}
+
     if not git_commit(f"experiment: {description}"):
         return {"status": "error", "message": "Failed to commit"}
 

@@ -90,13 +90,13 @@ def generate_proposals(context: ProposalContext) -> list[Proposal]:
     proposals = []
     weaknesses = analyze_failures(context.eval_metrics)
 
-    # Previously tried descriptions (to avoid repeating)
-    tried = {exp.get("description", "") for exp in context.experiment_history}
+    # Previously tried descriptions (normalized to lowercase for comparison)
+    tried = {exp.get("description", "").lower() for exp in context.experiment_history}
 
     # Proposal generators based on weakness analysis
     for weakness in weaknesses:
         if "completion" in weakness.lower():
-            if "add examples to system prompt" not in tried:
+            if "add tool usage examples to system_prompt" not in tried:
                 proposals.append(Proposal(
                     hypothesis="Adding concrete examples improves task completion",
                     change_description="Add tool usage examples to SYSTEM_PROMPT",
@@ -106,7 +106,7 @@ def generate_proposals(context: ProposalContext) -> list[Proposal]:
                     expected_impact="+5-10% task completion",
                     priority=1,
                 ))
-            if "add chain of thought" not in tried:
+            if "add explicit think-then-act structure to prompt" not in tried:
                 proposals.append(Proposal(
                     hypothesis="Chain-of-thought scaffolding helps on complex tasks",
                     change_description="Add explicit think-then-act structure to prompt",
@@ -138,6 +138,30 @@ def generate_proposals(context: ProposalContext) -> list[Proposal]:
                 expected_impact="+5% tool accuracy",
                 priority=2,
             ))
+
+        if "strong" in weakness.lower() or "micro" in weakness.lower():
+            if "lower temperature for deterministic output" not in tried:
+                proposals.append(Proposal(
+                    hypothesis="Lower temperature yields more consistent results",
+                    change_description="Lower temperature for deterministic output",
+                    section="TEMPERATURE",
+                    old_value="0.0",
+                    new_value="0.0",
+                    expected_impact="+1-2% consistency",
+                    risk_level="low",
+                    priority=8,
+                ))
+            if "reduce token budget to improve efficiency" not in tried:
+                proposals.append(Proposal(
+                    hypothesis="Tighter token budget forces more efficient tool use",
+                    change_description="Reduce token budget to improve efficiency",
+                    section="TOKEN_BUDGET",
+                    old_value="30000",
+                    new_value="25000",
+                    expected_impact="+2-5% token efficiency",
+                    risk_level="medium",
+                    priority=7,
+                ))
 
     # Sort by priority (lower = higher priority)
     proposals.sort(key=lambda p: p.priority)

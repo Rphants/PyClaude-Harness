@@ -1,0 +1,100 @@
+{
+  "model": "claude-sonnet-4-20250514",
+  "temperature": 0.0,
+  "token_budget": 30000,
+  "max_turns": 15,
+  "system_prompt": "You are Claude, an AI assistant built by Anthropic. You help users\naccomplish tasks by using available tools effectively and efficiently.\n\nGuidelines:\n- Think step by step before acting\n- Use the minimum number of tool calls needed\n- Prefer precise, targeted tool use over broad exploration\n- When reading files, only read the sections you need\n- When searching, use specific patterns rather than broad queries\n- Complete the task fully before responding to the user\n- If you encounter an error, diagnose it before retrying\n\nTool usage priorities:\n1. Read/Glob/Grep for information gathering\n2. Edit for modifying existing files (prefer over Write for changes)\n3. Write for creating new files\n4. Bash for running commands, tests, builds\n5. Agent for complex multi-step subtasks\n\nContext management:\n- Keep track of what you've already learned\n- Don't re-read files you've already seen\n- Summarize findings as you go to stay within context limits",
+  "tool_definitions": {
+    "Read": {
+      "description": "Read file contents with optional line range",
+      "priority": "high",
+      "hints": [
+        "Use offset/limit for large files",
+        "Read once, reference from memory after"
+      ]
+    },
+    "Edit": {
+      "description": "Replace exact string matches in files",
+      "priority": "high",
+      "hints": [
+        "Always Read before Edit",
+        "Use unique strings for old_string",
+        "Preserve exact indentation"
+      ]
+    },
+    "Write": {
+      "description": "Create new files or complete rewrites",
+      "priority": "medium",
+      "hints": [
+        "Prefer Edit for modifications",
+        "Use for new file creation only"
+      ]
+    },
+    "Bash": {
+      "description": "Execute shell commands",
+      "priority": "medium",
+      "hints": [
+        "Prefer Read/Grep/Glob over cat/grep/find",
+        "Use && to chain dependent commands",
+        "Quote paths with spaces"
+      ]
+    },
+    "Grep": {
+      "description": "Search file contents with regex",
+      "priority": "high",
+      "hints": [
+        "Use glob param to filter file types",
+        "Use files_with_matches mode for discovery",
+        "Use content mode with context for reading"
+      ]
+    },
+    "Glob": {
+      "description": "Find files by name patterns",
+      "priority": "high",
+      "hints": [
+        "Use ** for recursive matching",
+        "Results sorted by modification time"
+      ]
+    },
+    "Agent": {
+      "description": "Launch sub-agents for complex tasks",
+      "priority": "low",
+      "hints": [
+        "Use for multi-step research tasks",
+        "Provide complete task description",
+        "Launch multiple in parallel when independent"
+      ]
+    }
+  },
+  "context_strategy": {
+    "compaction_enabled": true,
+    "compaction_threshold_tokens": 20000,
+    "relevance_filtering": true,
+    "relevance_window": 5,
+    "summarize_older_turns": true,
+    "max_file_cache_entries": 10,
+    "dedup_tool_results": true
+  },
+  "routing_rules": {
+    "file_search": {
+      "triggers": ["find", "locate", "where is", "search for file"],
+      "strategy": "Glob first, then Read targeted results"
+    },
+    "code_search": {
+      "triggers": ["search for", "grep", "find usage", "references to"],
+      "strategy": "Grep with specific patterns, then Read context"
+    },
+    "file_edit": {
+      "triggers": ["change", "modify", "update", "fix", "edit"],
+      "strategy": "Read target file, then Edit with precise old_string"
+    },
+    "file_create": {
+      "triggers": ["create", "write", "new file", "generate"],
+      "strategy": "Check if exists with Glob, then Write"
+    },
+    "run_command": {
+      "triggers": ["run", "execute", "test", "build", "install"],
+      "strategy": "Bash with appropriate timeout"
+    }
+  }
+}

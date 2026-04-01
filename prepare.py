@@ -16,7 +16,6 @@ Usage: python prepare.py [--tasks-dir benchmarks/tasks] [--config optimize.py]
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import os
 import statistics
@@ -123,22 +122,22 @@ def load_tasks(tasks_dir: Path = EVAL_TASKS_DIR) -> list[BenchmarkTask]:
 # Harness config loading
 # ---------------------------------------------------------------------------
 
-def load_harness_config(config_path: str = "optimize.py") -> dict[str, Any]:
-    """Dynamically load the harness config from optimize.py."""
-    spec = importlib.util.spec_from_file_location("harness_config", config_path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot load {config_path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # type: ignore[union-attr]
+def load_harness_config(config_path: str = "optimize.json") -> dict[str, Any]:
+    """Load the harness config from a JSON file (safe, no code execution)."""
+    path = Path(config_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+    raw = json.loads(path.read_text())
+    # Return with defaults for any missing keys
     return {
-        "system_prompt": getattr(module, "SYSTEM_PROMPT", ""),
-        "tool_definitions": getattr(module, "TOOL_DEFINITIONS", {}),
-        "context_strategy": getattr(module, "CONTEXT_STRATEGY", {}),
-        "routing_rules": getattr(module, "ROUTING_RULES", {}),
-        "token_budget": getattr(module, "TOKEN_BUDGET", MAX_TOKENS_PER_TASK),
-        "temperature": getattr(module, "TEMPERATURE", 0.0),
-        "model": getattr(module, "MODEL", "claude-sonnet-4-20250514"),
-        "max_turns": getattr(module, "MAX_TURNS", MAX_TURNS_PER_TASK),
+        "system_prompt": raw.get("system_prompt", ""),
+        "tool_definitions": raw.get("tool_definitions", {}),
+        "context_strategy": raw.get("context_strategy", {}),
+        "routing_rules": raw.get("routing_rules", {}),
+        "token_budget": raw.get("token_budget", MAX_TOKENS_PER_TASK),
+        "temperature": raw.get("temperature", 0.0),
+        "model": raw.get("model", "claude-sonnet-4-20250514"),
+        "max_turns": raw.get("max_turns", MAX_TURNS_PER_TASK),
     }
 
 
@@ -191,9 +190,30 @@ def evaluate_task(task: BenchmarkTask, config: dict[str, Any]) -> TaskResult:
     efficiency_factor = max(0.3, 1.0 - context_score * 0.5)
     tokens_used = int(base_tokens * efficiency_factor)
 
-    # Simulate tool calls
-    tools_called = list(task.expected_tools) if tool_coverage > 0.5 else []
-    unnecessary = [t for t in tools_called if t not in task.expected_tools]
+    # Simulate tool calls — realistic: may miss expected tools or call extras
+    expected_set = set(task.expected_tools)
+    tools_called = []
+    unnecessary = []
+
+    if task.expected_tools:
+        # Higher tool_coverage → more likely to call the right tools
+        for tool in task.expected_tools:
+            if tool in tool_defs or tool_coverage > 0.4:
+                tools_called.append(tool)
+            # else: missed tool
+
+        # Lower routing quality → more likely to call unnecessary tools
+        all_tools = list(tool_defs.keys())
+        extra_pool = [t for t in all_tools if t not in expected_set]
+        routing_quality = min(len(routing) / 5, 1.0)
+        # Add unnecessary tools inversely proportional to routing quality
+        for extra_tool in extra_pool:
+            if routing_quality < 0.6:
+                unnecessary.append(extra_tool)
+                tools_called.append(extra_tool)
+            elif routing_quality < 0.8 and tool_defs.get(extra_tool, {}).get("priority") == "low":
+                unnecessary.append(extra_tool)
+                tools_called.append(extra_tool)
 
     completed = completion_prob > 0.5
     turns_used = max(1, int(config.get("max_turns", 10) * (1.0 - completion_prob * 0.5)))
@@ -253,7 +273,7 @@ def evaluate_all(tasks: list[BenchmarkTask], config: dict[str, Any]) -> EvalMetr
     )
 
 
-def evaluate_composite(config_path: str = "optimize.py",
+def evaluate_composite(config_path: str = "optimize.json",
                        tasks_dir: Path = EVAL_TASKS_DIR) -> float:
     """
     Single-number evaluation. Returns composite_score (higher is better).
@@ -291,7 +311,7 @@ def print_summary(metrics: EvalMetrics) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="PyClaude-Harness evaluation")
-    parser.add_argument("--config", default="optimize.py", help="Harness config file")
+    parser.add_argument("--config", default="optimize.json", help="Harness config file")
     parser.add_argument("--tasks-dir", type=Path, default=EVAL_TASKS_DIR)
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     args = parser.parse_args()

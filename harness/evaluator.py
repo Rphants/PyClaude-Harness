@@ -8,6 +8,7 @@ Runs benchmark tasks, collects per-task results, identifies failure patterns.
 from __future__ import annotations
 
 import json
+import statistics
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
@@ -36,7 +37,7 @@ class DetailedEvaluation:
     improvement_hints: list[str]
 
 
-def run_evaluation(config_path: str = "optimize.py",
+def run_evaluation(config_path: str = "optimize.json",
                    tasks_dir: Path = EVAL_TASKS_DIR) -> DetailedEvaluation:
     """Run full evaluation with detailed diagnostics."""
     config = load_harness_config(config_path)
@@ -65,7 +66,8 @@ def run_evaluation(config_path: str = "optimize.py",
         result = evaluate_task(task, config)
         task_results.append(result)
 
-    metrics = evaluate_all(tasks, config)
+    # Compute metrics from already-collected results (avoid evaluating twice)
+    metrics = _metrics_from_results(task_results)
 
     # Analyze failures
     failure_analysis = []
@@ -90,6 +92,33 @@ def run_evaluation(config_path: str = "optimize.py",
         task_results=task_results,
         failure_analysis=failure_analysis,
         improvement_hints=hints,
+    )
+
+
+def _metrics_from_results(results: list[TaskResult]) -> EvalMetrics:
+    """Compute EvalMetrics from already-collected TaskResults (no re-evaluation)."""
+    if not results:
+        return EvalMetrics(
+            task_completion_rate=0.0, avg_token_efficiency=0.0,
+            tool_accuracy=0.0, avg_latency_seconds=0.0,
+            total_tasks=0, tasks_completed=0, tasks_failed=0,
+        )
+    completed = [r for r in results if r.completed]
+    failed = [r for r in results if not r.completed]
+    task_completion_rate = len(completed) / len(results)
+    avg_tokens = statistics.mean(r.tokens_used for r in results)
+    total_calls = sum(len(r.tools_called) for r in results)
+    unnecessary_calls = sum(len(r.unnecessary_tools) for r in results)
+    tool_accuracy = 1.0 - (unnecessary_calls / max(total_calls, 1))
+    avg_latency = statistics.mean(r.wall_seconds for r in results)
+    return EvalMetrics(
+        task_completion_rate=task_completion_rate,
+        avg_token_efficiency=avg_tokens,
+        tool_accuracy=tool_accuracy,
+        avg_latency_seconds=avg_latency,
+        total_tasks=len(results),
+        tasks_completed=len(completed),
+        tasks_failed=len(failed),
     )
 
 
