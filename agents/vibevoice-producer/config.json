@@ -1,0 +1,54 @@
+{
+  "agent": "vibevoice-producer",
+  "version": 1,
+  "created": "2026-04-01",
+  "target_repo": "/Users/ronaldbigger/Documents/New project/voice-lab-platform",
+  "voice_lab_github": "Rphants/agentrvm-voice-lab",
+  "output_dir": "~/agentrvm/public",
+
+  "current_best": {
+    "model": "eleven_multilingual_v2",
+    "stability": 0.42,
+    "similarity_boost": 0.88,
+    "style": 0.03,
+    "speed": 0.95,
+    "script_template": "motivated-wholesale",
+    "sample_path": null,
+    "naturalness_rating": null
+  },
+
+  "voices": {
+    "jake": "cjVigY5qzO86Huf0OWal",
+    "maria": "cgSgspJ2msm6clMCkdW9",
+    "chris": "bIHbv24MWmeRgasZH58o",
+    "ronald_clone": "QwXiPLlFrzJB1z2FbhOT"
+  },
+
+  "models_to_test": [
+    "vibevoice-realtime-v1",
+    "eleven_multilingual_v2",
+    "eleven_turbo_v2_5",
+    "index-tts-2",
+    "chatterbox",
+    "qwen-tts"
+  ],
+
+  "verticals": [
+    "wholesale-residential",
+    "wholesale-commercial",
+    "timeshare-exit",
+    "investor-multifamily"
+  ],
+
+  "runpod": {
+    "worker_cost_usd_hr": 1.49,
+    "optimal_workers": 9,
+    "max_concurrent": 18,
+    "msgs_per_hr_at_9": 939.5,
+    "cost_per_msg": 0.001586
+  },
+
+  "experiment_count": 0,
+  "samples_generated": 0,
+  "samples_kept": 0
+}

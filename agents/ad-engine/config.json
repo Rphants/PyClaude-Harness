@@ -1,0 +1,35 @@
+{
+  "agent": "ad-engine",
+  "version": 1,
+  "created": "2026-04-01",
+
+  "meta": {
+    "page_id": "1087752787745473",
+    "app_id": "1422908658889833",
+    "ad_account": "act_125821642",
+    "pixel_id": "1606520033988956",
+    "business_id": "1440762030250265"
+  },
+
+  "budget": {
+    "daily_start": 50,
+    "daily_max": 300,
+    "kill_threshold_cpl": 15,
+    "keep_range_cpl": [8, 15],
+    "scale_threshold_cpl": 8,
+    "scale_increment_pct": 25,
+    "scale_interval_days": 3
+  },
+
+  "audiences": [
+    {"name": "wholesalers-broad", "interests": ["real estate wholesaling", "real estate investing"], "age": "25-55"},
+    {"name": "investors-active", "interests": ["real estate investment", "rental property", "fix and flip"], "age": "30-60"},
+    {"name": "team-leaders", "interests": ["real estate team", "real estate brokerage", "acquisitions"], "age": "30-55"}
+  ],
+
+  "active_campaigns": [],
+  "experiment_count": 0,
+  "best_cpl": null,
+  "total_spend": 0,
+  "total_leads": 0
+}

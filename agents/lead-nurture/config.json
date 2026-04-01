@@ -1,0 +1,11 @@
+{
+  "agent": "lead-nurture",
+  "version": 1,
+  "created": "2026-04-01",
+  "slack_channel": "C0AMZSG37LJ",
+  "leads_processed": 0,
+  "demos_booked": 0,
+  "conversions": 0,
+  "avg_response_time_seconds": null,
+  "scoring_model": "rule-based-v1"
+}
