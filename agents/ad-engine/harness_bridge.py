@@ -17,6 +17,7 @@ Pattern:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from dataclasses import asdict, dataclass, field
@@ -261,6 +262,8 @@ def generate_training_batch(render: bool = True) -> dict[str, Any]:
     cmd = [sys.executable, str(CREATIVE_TRAINING_FILE), "generate", "--json"]
     if not render:
         cmd.append("--no-render")
+    if os.environ.get("AD_DISABLE_CLAUDE_COPY", "").strip().lower() in {"1", "true", "yes", "on"}:
+        cmd.append("--no-claude")
 
     try:
         result = subprocess.run(
