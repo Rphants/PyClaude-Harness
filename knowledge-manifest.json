@@ -147,6 +147,26 @@
           "label": "Meta Advertising Standards",
           "url": "https://transparency.fb.com/policies/ad-standards/",
           "kind": "official_docs"
+        },
+        {
+          "label": "Meta Ad Library",
+          "url": "https://www.facebook.com/ads/library/",
+          "kind": "official_docs"
+        },
+        {
+          "label": "Meta Advantage+ Creative",
+          "url": "https://www.facebook.com/business/ads/meta-advantage-plus/creative",
+          "kind": "official_docs"
+        },
+        {
+          "label": "Meta Creative Strategy",
+          "url": "https://www.facebook.com/business/ads/ad-creative",
+          "kind": "official_docs"
+        },
+        {
+          "label": "Agent Meta Ads Domain Playbook",
+          "url": "local://agents/ad-engine/META-ADS-DOMAIN.md",
+          "kind": "internal_context"
         }
       ]
     }
@@ -197,6 +217,24 @@
           "label": "Variant routing fix",
           "url": "local:///Users/ronaldbigger/Documents/agentrvm-variant-routing-fix",
           "kind": "local_workspace"
+        }
+      ]
+    },
+    {
+      "id": "ad_engine_meta_domain_knowledge",
+      "name": "Ad-engine Meta Ads domain knowledge",
+      "priority": "critical",
+      "why_it_matters": "The ad-engine needs Meta-specific experimentation, compliance, creative, and deployment heuristics in every run so it is not optimizing from generic ad-copy instincts.",
+      "sources": [
+        {
+          "label": "Meta Ads Domain Playbook",
+          "url": "local://agents/ad-engine/META-ADS-DOMAIN.md",
+          "kind": "internal_context"
+        },
+        {
+          "label": "Agent Messaging Brief",
+          "url": "local://agents/ad-engine/MESSAGING-BRIEF.md",
+          "kind": "internal_context"
         }
       ]
     }

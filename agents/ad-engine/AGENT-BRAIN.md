@@ -2,49 +2,46 @@
 
 ## Core Insights
 
-### Audio-First Breakthrough
-- **#1 Differentiator**: No competitor runs audio ads with AI voicemail
-- **Proof by Hearing**: Text claims naturalness, but audio PROVES it
-- **Trust Moment**: Hearing a person speak is the highest-conviction moment in B2B SaaS
-- **Expected Lift**: Audio-first ads should achieve 20-30% lower CPL than static images
+### Canonical Product Truth
+- **What AgentRVM Actually Does**: Detects seller intent signals, prioritizes likely opportunities, and triggers fast natural outbound follow-up before slower competitors react
+- **What It Does NOT Do**: It is not an answering service, it does not answer inbound calls, and it is not sold as a per-voicemail commodity
+- **Winning Message**: Seller-signal intelligence plus speed to first outreach beats manual dialing and generic call workflows
+
+### Meta Skill Stack
+- **Ad Library Reconnaissance**: Study live competitor hooks, proof devices, formats, and angles before generating fresh concepts
+- **Campaign Architecture**: Preserve clear Campaign -> Ad Set -> Ad Creative -> Ad lineage so testing and scaling stay interpretable
+- **Objective Selection**: Match traffic, leads, messaging, or sales objectives to the actual next step we want from wholesalers
+- **Creative Diversification**: Test distinct concepts first, not tiny wording edits
+- **Policy Review**: Watch for housing-category and real-estate review risk before launch
+- **Delivery Interpretation**: Judge CTR, click quality, lead quality, and callback potential together
 
 ### Audience Psychology (Wholesalers)
-- **Pain**: Cold calling 100-200 numbers/day is exhausting, expensive ($2/dial), inconsistent
-- **Desire**: Automated voicemail that sounds real, costs pennies, scales infinitely
-- **Proof Point**: Must HEAR the quality difference
-- **Decision Trigger**: "Wait, was that actually a robot?" moment
+- **Pain**: Dialing blind is slow, expensive, and reactive; the real cost is reaching the seller after a faster competitor already did
+- **Desire**: Know which signals matter first, trigger outreach instantly, and spend more rep time on live opportunities
+- **Proof Point**: Better timing and natural outbound follow-up should lead to better callbacks
+- **Decision Trigger**: "We are too late because we are still guessing" is stronger than "AI is cheap"
 
 ### Copy Angles Ranked by Expected Performance
 
-1. **Curiosity (Audio-First)** — "This voicemail got a 40% callback rate."
-   - Psychology: Irresistible hook + social proof
-   - Expected CPL: $7-8
-   - Expected CTR: 4.5%
-   - Why Best: Hook is undeniable, audio proves it
+1. **Pain of Reacting Too Late** — "Late outreach costs margin."
+   - Psychology: Lost deals feel expensive and immediate
+   - Why Strong: Makes timing failure concrete instead of abstract
 
-2. **Competitive FOMO** — "While you're dialing, your competitor's AI left 500 voicemails."
-   - Psychology: FOMO + losing ground to competitors
-   - Expected CPL: $6-7
-   - Expected CTR: 4.8%
-   - Why Strong: FOMO drives urgency, audio proves speed claim
+2. **Competitive FOMO** — "First signal. First outreach."
+   - Psychology: Winning depends on moving first
+   - Why Strong: Frames speed as the advantage, not generic automation
 
-3. **ROI Reveal** — "$0.001 per voicemail. Not a typo."
-   - Psychology: Disbelief + cost savings math
-   - Expected CPL: $8-10
-   - Expected CTR: 4.2%
-   - Why Works: Math is compelling to margins-conscious wholesalers
+3. **Callback Proof** — "The callback proves the data."
+   - Psychology: Performance proof lowers skepticism
+   - Why Strong: Connects signal detection to real-world response
 
-4. **Pain Point** — "Tired of dialing 200 numbers a day?"
-   - Psychology: Relief + escape from drudgery
-   - Expected CPL: $10-12
-   - Expected CTR: 3.8%
-   - Why Weaker: Audio reveal is stronger than pain statement alone
+4. **Data Advantage** — "Stop dialing blind. Start with seller intent."
+   - Psychology: Operator-minded buyers want better input quality
+   - Why Strong: Positions AgentRVM as a data layer, not another dialer
 
-5. **Social Proof** — "47 wholesalers already switched."
-   - Psychology: Herd behavior
-   - Expected CPL: $9-11
-   - Expected CTR: 3.5%
-   - Why Weaker: Works for conversion, less effective for awareness
+5. **Margin Leverage** — "One signal can become a callback."
+   - Psychology: One good opportunity can justify the system
+   - Why Strong: Economics support the story without turning into cheapness messaging
 
 ## Brand Foundation
 
@@ -55,10 +52,10 @@
 - `#FFFFFF` (white) — text on dark (TEXT)
 
 ### Typography Principles
-- Headline: Bold, 56-60pt, orange, short (max 10 words)
-- Body: Regular, 32-36pt, white, conversational tone
-- CTA: Bold, 40pt, white on orange background
-- All fonts: DejaVuSans-Bold or Liberation Sans (system fonts)
+- Headline: Condensed display font, high contrast, 72pt+, short and forceful
+- Body: Clean sans serif, smaller and tighter, used as support not decoration
+- CTA: Rounded orange pill with strong verb and dark text
+- Preferred fonts: Avenir Next Condensed for headlines, Avenir Next or equivalent for body/UI
 
 ### Visual Style
 - Dark theme (#0a0a0a background) references audio/voice/tech
