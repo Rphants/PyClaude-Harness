@@ -2,6 +2,10 @@ __pycache__/
 *.pyc
 *.pyo
 .env
+.env.*
+!.env.example
+!.env.*.example
+.agent-secrets/
 .venv
 venv/
 *.egg-info/
