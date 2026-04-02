@@ -26,6 +26,40 @@ echo "Mode: $MODE"
 echo "Correlation: $CORRELATION_ID"
 echo ""
 
+local_gpu_ready() {
+    python3 - "$AGENT_DIR/local_gpu_scene.py" <<'PY'
+import json
+import subprocess
+import sys
+
+script = sys.argv[1]
+result = subprocess.run(
+    [sys.executable, script, "healthcheck"],
+    capture_output=True,
+    text=True,
+    check=False,
+)
+
+if result.returncode != 0 or not result.stdout.strip():
+    raise SystemExit(1)
+
+try:
+    payload = json.loads(result.stdout)
+except json.JSONDecodeError:
+    raise SystemExit(1)
+
+raise SystemExit(0 if payload.get("ready") else 1)
+PY
+}
+
+if [ -z "${AD_SCENE_PROVIDER:-}" ]; then
+    if command -v nvidia-smi >/dev/null 2>&1 && local_gpu_ready; then
+        export AD_SCENE_PROVIDER="local_gpu"
+    else
+        export AD_SCENE_PROVIDER="google_stitch"
+    fi
+fi
+
 # --- Step 1: Load secrets from secrets-manager ---
 echo "Step 1: Loading secrets..."
 cd "$REPO_DIR"
@@ -48,6 +82,7 @@ echo "  CANVA_REFRESH_TOKEN: ${CANVA_REFRESH_TOKEN:+set}${CANVA_REFRESH_TOKEN:-N
 echo "  CANVA_ACCESS_TOKEN: ${CANVA_ACCESS_TOKEN:+set}${CANVA_ACCESS_TOKEN:-NOT SET}"
 echo "  FIGMA_ACCESS_TOKEN: ${FIGMA_ACCESS_TOKEN:+set}${FIGMA_ACCESS_TOKEN:-NOT SET}"
 echo "  GOOGLE_STITCH_PROJECT_ID: ${GOOGLE_STITCH_PROJECT_ID:+set}${GOOGLE_STITCH_PROJECT_ID:-NOT SET}"
+echo "  AD_SCENE_PROVIDER: ${AD_SCENE_PROVIDER:-NOT SET}"
 echo ""
 
 run_preflight() {

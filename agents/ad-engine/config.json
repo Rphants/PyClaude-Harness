@@ -13,6 +13,7 @@
     "owner": "ad-engine",
     "must_self_generate_ads": true,
     "providers": [
+      "local_gpu_scene",
       "creative_generator",
       "canva_connect",
       "figma",
@@ -20,6 +21,7 @@
       "meta_ads"
     ],
     "fallback_order": [
+      "local_gpu_scene",
       "google_stitch",
       "figma",
       "canva_connect",

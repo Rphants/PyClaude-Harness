@@ -109,6 +109,33 @@ def google_stitch_status() -> dict[str, Any]:
     return status
 
 
+def local_gpu_scene_status() -> dict[str, Any]:
+    script_path = AGENT_DIR / "local_gpu_scene.py"
+    status: dict[str, Any] = {
+        "script_present": file_present(script_path),
+        "ready": False,
+    }
+    if not status["script_present"]:
+        status["error"] = "local_gpu_scene.py missing"
+        return status
+
+    result = command_status([sys.executable, str(script_path), "healthcheck"], timeout=30)
+    if not result["ok"] or not result["stdout"]:
+        status["error"] = result["stderr"] or "local GPU scene healthcheck failed"
+        return status
+
+    try:
+        payload = json.loads(result["stdout"])
+    except json.JSONDecodeError:
+        status["error"] = "local GPU scene healthcheck returned invalid JSON"
+        status["raw_output"] = result["stdout"]
+        return status
+
+    status.update(payload)
+    status["ready"] = bool(payload.get("ready"))
+    return status
+
+
 def meta_status(config: dict[str, Any]) -> dict[str, Any]:
     status: dict[str, Any] = {
         "script_present": file_present(AGENT_DIR / "meta_ads.py"),
@@ -161,7 +188,9 @@ def build_report(mode: str) -> dict[str, Any]:
     config = load_json(CONFIG_PATH)
     knowledge_manifest = load_json(KNOWLEDGE_MANIFEST_PATH)
     stitch = google_stitch_status()
+    local_gpu_scene = local_gpu_scene_status()
     meta = meta_status(config)
+    scene_provider = os.environ.get("AD_SCENE_PROVIDER", "google_stitch").strip().lower()
 
     gcloud_account = command_status(
         ["gcloud", "auth", "list", "--filter=status:ACTIVE", "--format=value(account)"]
@@ -183,6 +212,7 @@ def build_report(mode: str) -> dict[str, Any]:
     tooling = {
         "claude_cli": bool(shutil.which("claude")),
         "ffmpeg": bool(shutil.which("ffmpeg")),
+        "nvidia_smi": bool(shutil.which("nvidia-smi")),
         "pillow": module_present("PIL"),
         "gcloud": bool(shutil.which("gcloud")),
         "gcloud_active_account": gcloud_account["stdout"] or None,
@@ -220,6 +250,7 @@ def build_report(mode: str) -> dict[str, Any]:
             "ready": file_present(AGENT_DIR / "figma_api.py") and secrets["FIGMA_ACCESS_TOKEN"],
         },
         "google_stitch": stitch,
+        "local_gpu_scene": local_gpu_scene,
         "meta_ads": {
             **meta,
         },
@@ -254,6 +285,8 @@ def build_report(mode: str) -> dict[str, Any]:
 
     if mode == "creatives":
         require(providers["creative_generator"]["ready"], "Local creative generation is not ready.")
+        if scene_provider in {"local_gpu", "local-gpu", "gpu"}:
+            require(providers["local_gpu_scene"]["ready"], "Local GPU scene generation is not ready.")
         warn(providers["canva_connect"]["ready"], "Canva Connect is not wired for polished export workflows.")
         warn(providers["figma"]["ready"], "Figma runtime access is missing.")
         warn(providers["google_stitch"]["ready"], "Google Stitch / Vertex runtime is missing.")
@@ -262,6 +295,8 @@ def build_report(mode: str) -> dict[str, Any]:
         require(providers["meta_ads"]["ready"], "Meta deployment is blocked because META runtime auth is invalid.")
     elif mode == "full":
         require(providers["creative_generator"]["ready"], "Local creative generation is not ready.")
+        if scene_provider in {"local_gpu", "local-gpu", "gpu"}:
+            require(providers["local_gpu_scene"]["ready"], "Local GPU scene generation is not ready.")
         require(providers["claudepy"]["ready"], "ClaudePY runtime is not ready (missing CLI or ANTHROPIC_API_KEY).")
         warn(providers["meta_ads"]["ready"], "Meta deployment is still offline.")
         warn(providers["canva_connect"]["ready"], "Canva Connect is not fully wired.")
@@ -272,6 +307,8 @@ def build_report(mode: str) -> dict[str, Any]:
         warn(docs["required_corpora_complete"], "Knowledge manifest is missing one or more required corpora.")
     elif mode == "production":
         require(providers["creative_generator"]["ready"], "Local creative generation is not ready.")
+        if scene_provider in {"local_gpu", "local-gpu", "gpu"}:
+            require(providers["local_gpu_scene"]["ready"], "Local GPU scene generation is not ready.")
         require(providers["claudepy"]["ready"], "ClaudePY runtime is not ready.")
         require(providers["meta_ads"]["ready"], "Meta deployment is not ready.")
         require(providers["canva_connect"]["ready"], "Canva Connect runtime is not ready.")
@@ -299,6 +336,10 @@ def build_report(mode: str) -> dict[str, Any]:
         )
         if stitch_error:
             warnings.append(f"Google Stitch healthcheck failed: {stitch_error}")
+    if scene_provider in {"local_gpu", "local-gpu", "gpu"} and not providers["local_gpu_scene"]["ready"]:
+        local_gpu_error = providers["local_gpu_scene"].get("error")
+        if local_gpu_error:
+            warnings.append(f"Local GPU scene healthcheck failed: {local_gpu_error}")
 
     if tooling["gcloud"] and not tooling["gcloud_access_token_ready"]:
         warnings.append(
@@ -318,6 +359,7 @@ def build_report(mode: str) -> dict[str, Any]:
             "creative_stack_owner": creative_stack.get("owner"),
             "creative_stack_providers": creative_stack.get("providers", []),
             "must_self_generate_ads": creative_stack.get("must_self_generate_ads"),
+            "scene_provider": scene_provider,
         },
         "secrets": secrets,
         "tooling": tooling,

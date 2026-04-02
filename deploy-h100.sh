@@ -43,7 +43,15 @@ fi
 
 # --- 4. Python deps ---
 echo "[4/7] Installing Python dependencies..."
-pip install pytest Pillow --break-system-packages 2>/dev/null || pip install pytest Pillow
+COMMON_PY_DEPS=(pytest Pillow requests certifi)
+GPU_PY_DEPS=(diffusers accelerate transformers safetensors sentencepiece)
+
+pip install "${COMMON_PY_DEPS[@]}" --break-system-packages 2>/dev/null || pip install "${COMMON_PY_DEPS[@]}"
+
+if command -v nvidia-smi >/dev/null 2>&1; then
+    echo "Detected NVIDIA runtime — installing local GPU creative deps..."
+    pip install "${GPU_PY_DEPS[@]}" --break-system-packages 2>/dev/null || pip install "${GPU_PY_DEPS[@]}"
+fi
 
 # --- 5. Validate module loading ---
 echo "[5/7] Validating module imports..."
@@ -73,6 +81,11 @@ if failed:
     exit(1)
 print('\nAll modules loaded successfully!')
 "
+
+if command -v nvidia-smi >/dev/null 2>&1; then
+    echo "Checking local GPU scene provider..."
+    python3 agents/ad-engine/local_gpu_scene.py healthcheck
+fi
 
 # --- 6. Run tests ---
 echo "[6/7] Running test suite..."

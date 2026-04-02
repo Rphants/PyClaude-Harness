@@ -22,6 +22,7 @@ EXPERIMENTS_DIR = AGENT_DIR / "experiments"
 OPTIMIZE_FILE = AGENT_DIR / "optimize.json"
 CONFIG_FILE = AGENT_DIR / "config.json"
 STITCH_SCRIPT = AGENT_DIR / "stitch_api.py"
+LOCAL_GPU_SCENE_SCRIPT = AGENT_DIR / "local_gpu_scene.py"
 GENERATOR_SCRIPT = AGENT_DIR / "creative_generator.py"
 MESSAGING_BRIEF_FILE = AGENT_DIR / "MESSAGING-BRIEF.md"
 META_ADS_DOMAIN_FILE = AGENT_DIR / "META-ADS-DOMAIN.md"
@@ -445,10 +446,16 @@ Rules:
 def generate_scene(scene_prompt: str, output_path: Path) -> None:
     if output_path.exists():
         return
+    provider = os.environ.get("AD_SCENE_PROVIDER", "google_stitch").strip().lower()
+    if provider in {"local_gpu", "local-gpu", "gpu"}:
+        script_path = LOCAL_GPU_SCENE_SCRIPT
+    else:
+        script_path = STITCH_SCRIPT
+
     subprocess.run(
         [
             sys.executable,
-            str(STITCH_SCRIPT),
+            str(script_path),
             "generate",
             "--prompt",
             scene_prompt,
@@ -457,7 +464,7 @@ def generate_scene(scene_prompt: str, output_path: Path) -> None:
         ],
         check=True,
         cwd=AGENT_DIR,
-        timeout=180,
+        timeout=300,
         capture_output=True,
         text=True,
     )
@@ -578,6 +585,7 @@ def generate_batch(
             "proof_text": blueprint["proof_text"],
             "quality_score": score,
             "render_plan": {
+                "scene_provider": os.environ.get("AD_SCENE_PROVIDER", "google_stitch"),
                 "template": "hybrid-ugc",
                 "scene_path": scene_path.name,
                 "scene_prompt": blueprint["scene_prompt"],
