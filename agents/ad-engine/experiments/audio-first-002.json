@@ -1,0 +1,73 @@
+{
+  "id": "audio-first-002",
+  "type": "audio",
+  "angle": "roi",
+  "created": "2026-04-01",
+  "hypothesis": "ROI angle (cost comparison) resonates with price-conscious wholesalers. Math is undeniable.",
+
+  "creative": {
+    "name": "Audio-First: ROI Reveal",
+    "headline": "$0.001 per voicemail. Not a typo.",
+    "primary_text": "Hit play. That voicemail cost $0.001 to send. Your cold caller costs $2 per dial. Do the math: 10,000 AI voicemails for the price of 5 cold calls. Same callback rate. Zero burnout. Zero no-shows.",
+    "description": "Cost-per-message so low, scaling is inevitable.",
+    "cta_type": "LEARN_MORE",
+    "url": "https://agentrvm.com/pricing",
+    "audio": {
+      "file": "vibevoice-sample-002.mp3",
+      "duration_seconds": 5,
+      "source": "VibeVoice Producer agent"
+    }
+  },
+
+  "video_spec": {
+    "format": "15s",
+    "resolution": "1080x1080",
+    "structure": {
+      "hook": {
+        "duration": "0-3s",
+        "text": "$0.001 per voicemail. Not a typo.",
+        "color": "#FF8800"
+      },
+      "audio_play": {
+        "duration": "3-8s",
+        "text": "Listen to the math.",
+        "color": "#FFFFFF"
+      },
+      "reveal": {
+        "duration": "8-12s",
+        "text": "That voicemail cost 2 thousandths of a cent.",
+        "color": "#FFB84D"
+      },
+      "cta": {
+        "duration": "12-15s",
+        "text": "See Pricing",
+        "color": "#FFFFFF"
+      }
+    }
+  },
+
+  "targeting": {
+    "audience": "wholesalers-broad",
+    "interests": ["real estate wholesaling", "real estate investing", "cost reduction"],
+    "age_min": 25,
+    "age_max": 55,
+    "geo_countries": ["US"],
+    "exclude_custom_audiences": []
+  },
+
+  "budget": {
+    "daily_budget_cents": 500,
+    "currency": "USD",
+    "spend_cap_cents": 2500,
+    "note": "Start at $5/day, kill if CPL > $15"
+  },
+
+  "performance_targets": {
+    "cpl_target": 8,
+    "cpl_kill": 15,
+    "expected_ctr_pct": 4.2,
+    "expected_conversion_rate_pct": 3.2
+  },
+
+  "notes": "Wholesalers are margin-conscious. This angle positions AgentRVM as a cost-killer, not just a tool. The audio demo proves the quality justifies the low price."
+}

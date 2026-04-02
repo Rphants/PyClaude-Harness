@@ -82,3 +82,75 @@ Cowork (Claude Opus 4.6) acts as router between agents.
   - CLAUDE-2: Deploy AgentRVM to production (T1-1, still the top blocker)
   ALL AGENTS: Read WAR-RULES.md (updated by Codex — CMUX is now canonical bus, proof levels required).
 
+
+[CODEX/GPT-5.4] 2026-04-01T21:15:43Z STARTING — branch=fix/codex-p0-review | state=idea | claim=active review mode engaged per WAR-RULES; moving onto T1-3 voice-lab review and VibeVoice audio-ad concept planning | verification=read WAR-RULES.md + SPRINT-BOARD.md; next output will include concrete creative concepts and repo-grounded constraints.
+
+[CODEX/GPT-5.4] 2026-04-01T21:16:12Z HANDOFF — branch=fix/codex-p0-review | state=idea | claim=my active context is the Data Project / Appointment Intelligence lane. Full context for team: Andres has been contacted by email + Slack, collaboration brief is written, new scaffold repo exists at /Users/ronaldbigger/Documents/New project/timeshare-appointment-intelligence, baseline API/contracts/training path are working, and the real blocker is first sample-pack truth (outcomes, IDs, audio linkage). I can also support VibeVoice review work, but this is the primary strategic context currently attached to my station. | verification=kickoff email sent; Slack DM sent; local tests in starter repo passed (5/5).
+
+[CODEX/GPT-5.4] 2026-04-01T21:26:00Z DECISION — Persisted the Data Project lane into the durable company brain. Added /Users/ronaldbigger/Downloads/PyClaude-Harness/agents/ad-engine/AGENT-BRAIN.md with the appointment-intelligence context, artifacts, completed outreach to Andres, current blocker, and next-step sequence. Live context remains mirrored in CMUX on surface:7 (`Codex-1 | Data Project`).
+
+[CLAUDE-2/OPUS-4.6] 2026-04-01T21:35:00Z STARTING — branch=master | state=idea | claim=T1-1 Deploy AgentRVM to production | verification=curl https://agentrvm.com returns 200 + voice demo page loads
+
+[CLAUDE-2/OPUS-4.6] 2026-04-01T21:52:00Z BLOCKED — branch=master | state=worktree-pass | claim=T1-1 build succeeded, deploy blocked by expired auth | verification=pnpm build completed (9/9 static pages, 0 errors)
+  PROGRESS: git pull master OK (at fd6626e), pnpm install OK, pnpm build OK (static export in out/).
+  BLOCKER: Both `gcloud auth` and `firebase auth` tokens are expired. Cannot SSH to VM or deploy locally. The CI token in the task instructions is truncated/incomplete.
+  REQUIRED FROM RONALD: Run one of:
+    1. `firebase login --reauth` (then I can deploy from this machine), OR
+    2. `gcloud auth login` (then I can SSH to VM and deploy there)
+  CAVEATS: VM at 34.134.47.73 has no agentrvm repo cloned — would need to clone first if going the VM route.
+  NEXT ACTOR: RONALD (auth unblock)
+
+[COWORK-RELIEF/OPUS-4.6] 2026-04-01T21:55:00Z STARTING — branch=master | state=active | claim=COWORK-RELIEF online as acting orchestrator until COWORK returns at 19:00 Bogota. Read all 5 docs, ran monitor, parsed CMUX events. War room triage complete.
+  SITUATION: 3 warm agents (claude-1, codex-1, monitor), 3 dead/blocked (cowork, claude-2 BLOCKED on auth, codex-2 never-seen).
+  CRITICAL: Zero agents doing revenue work. CLAUDE-1 + CODEX-1 drifted to heartbeat infra (Tier 3). CLAUDE-2 hit auth wall on T1-1 deploy.
+  BLOCKER ESCALATION: T1-1 deploy needs Ronald to run `firebase login --reauth` or `gcloud auth login`. This is the #1 gate.
+  ROUTING: Redirecting CLAUDE-1 → T1-1 deploy (if Ronald unblocks auth) or T1-2 (PostHog A/B). CODEX-1 → T1-3 (audio ad creatives). CODEX-2 needs revival → T1-5 (placeholder fix).
+  NEXT ACTOR: RONALD (auth unblock for deploy)
+
+[COWORK-RELIEF/OPUS-4.6] 2026-04-01T22:05:00Z DONE — T1-1 COMPLETE. agentrvm.com is LIVE. Firebase hosting deployed by Ronald after auth unblock. Proof: merged-pass (production).
+  UNBLOCKED: T1-2 (PostHog A/B), T1-3 (ad creatives), T1-5 (placeholder fix), T1-6 (e2e test), T1-7 (audio samples), T1-8 (internal campaigns).
+  ROUTING NOW:
+    CLAUDE-1 → T1-2 (PostHog A/B test: VibeVoice audio on landing page)
+    CODEX-1 → T1-3 (audio ad creatives — finish AUDIO-AD-CONCEPTS.md)
+    CODEX-2 → T1-5 (fix [Agent]/[Days] placeholder bug) — needs revival
+    CLAUDE-2 → T1-7 (generate VibeVoice sample audio for landing page)
+  PRIORITY: T1-5 (placeholder fix) is fast + high-impact → T1-6 (e2e test) → T1-4 (launch ads)
+
+[COWORK-RELIEF/OPUS-4.6] 2026-04-01T22:15:00Z DECISION — STRATEGIC PIVOT per Ronald: Stop building skeleton agents. ALL resources focus on building ONE elite master agent: the Facebook Ad Creative Agent.
+  WHY: agentrvm.com is live but zero ad spend is running. This agent sits at the top of the revenue funnel. Everything compounds from it.
+  SCOPE: Narrow — Meta Ads ONLY. Produces ad images, writes copy, composes audio-first video from VibeVoice samples, deploys PAUSED for approval, evaluates CPL/CTR, iterates via autoresearch loop.
+  TOOLS AVAILABLE: Meta Marketing API (wired), Pillow/Cairo/ImageMagick (image gen), FFmpeg (video), VibeVoice .mp3s (audio), Meta Pixel (tracking), PyClaude-Harness autoresearch loop (improvement).
+  MISSING: AI image gen API (DALL-E/Stability), Figma API. Can start without these.
+  ALL AGENTS: Contribute your expertise to this build. This is the mission until it ships.
+  NEXT ACTOR: COWORK-RELIEF (architecture spec) + ALL (review)
+[AD-ENGINE] 2026-04-01T22:22:27Z DONE — Generated 3 static creatives + 3 audio-first specs. Ready for deployment.
+
+[COWORK-RELIEF/OPUS-4.6] 2026-04-01T22:30:00Z DONE — FULL BUILD COMPLETE. Facebook Ad Creative Agent delivered while Ronald at dinner. 3 parallel workstreams:
+  WORKSTREAM 1 — SOTA Research (52 sources, 147KB):
+    - Best performing Meta ad formats 2025-2026 (Reels + Carousel dominant)
+    - Audio-first ad psychology (60-65% watch with sound on, voice-over scores higher)
+    - B2B SaaS benchmarks (5-7% baseline conversion, 9-12% target)
+    - Real estate wholesaler ad patterns (money angle: 1.2-1.5% CTR best)
+    - Scroll-stopping psychology (3-second rule, 0.3s decision window)
+    - 50+ proven hooks, 4 full video scripts, 3 carousel variations
+    - Files: agents/ad-engine/research/ (6 docs)
+  WORKSTREAM 2 — Agent Code (2,218 lines Python):
+    - creative_generator.py (606 lines) — Pillow image gen, 4 templates, 3 sizes, TESTED
+    - video_composer.py (328 lines) — FFmpeg 15s video ads with timed text overlays
+    - meta_ads.py (367 lines) — Full Meta Graph API v21.0 integration
+    - evaluate.py (196 lines) — Creative readiness + performance scoring
+    - harness_bridge.py (395 lines) — Autoresearch bridge (propose/apply/evaluate/rollback)
+    - autoresearch.py (326 lines) — Autonomous improvement loop
+    - 3 preview images rendered (stats-card, testimonial, FOMO)
+    - 3 experiment specs (audio-first-001/002/003.json)
+  WORKSTREAM 3 — Autoresearch Wiring:
+    - optimize.json — All tunable parameters (creative, copy, audience, budget, audio)
+    - harness_bridge.py — Implements orchestrator interface for ad creatives
+    - autoresearch.py — Karpathy-style autonomous loop (propose→apply→evaluate→decide→repeat)
+    - program.md updated with Self-Improvement Protocol (150+ lines)
+    - AGENT-BRAIN.md pre-loaded with 168 lines of strategic knowledge
+  BLOCKERS REMAINING:
+    1. META_ACCESS_TOKEN (Ronald sets env var)
+    2. VibeVoice .mp3 samples (coordinate with vibevoice-producer agent)
+    3. Ronald reviews + approves creatives before going live
+  NEXT ACTOR: RONALD (review creatives, set META_ACCESS_TOKEN, provide audio samples)

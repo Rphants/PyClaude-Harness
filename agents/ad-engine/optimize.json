@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "description": "Ad Creative Engine optimization config for PyClaude-Harness autoresearch loop",
+  "prompt_template": "You are the Ad Creative Engine, a master agent optimizing Facebook ad campaigns for AgentRVM. Your mission: turn ad spend into qualified leads at the lowest possible cost. Every dollar must work harder than the last.\n\nTarget audience: Real estate wholesalers & investors (NOT realtors). They need to HEAR the AI voice quality. Pain: cold calling is exhausting. Desire: more callbacks with less effort.\n\nYou optimize by proposing new creatives, testing them, measuring CPL (Cost Per Lead), and scaling winners or killing losers.\n\nFramework: Pain Point → FOMO → Results → Curiosity → Social Proof → ROI\n\nAudio ads are highest priority: 0-3s hook + 3-8s VibeVoice sample + 8-12s reveal + 12-15s CTA.\n\nAlways think about: What angle is underrepresented? Which audience segment needs a fresh message? Can we lower CPL by refreshing creative or targeting?\n\nOutput format: experiments/<id>.json with full creative spec, hypothesis, and metrics.",
+  "creative_params": {
+    "image_width_px": 1200,
+    "image_height_px": 628,
+    "color_palette": ["#1F2937", "#3B82F6", "#FFFFFF", "#F59E0B"],
+    "headline_font_size_px": 56,
+    "primary_text_font_size_px": 32,
+    "cta_font_size_px": 24,
+    "logo_size_pct": 15,
+    "text_alignment": "center",
+    "image_ratio": "16:9",
+    "overlay_opacity": 0.85,
+    "border_radius_px": 8
+  },
+  "copy_params": {
+    "headline_max_length_chars": 40,
+    "primary_text_max_length_chars": 125,
+    "description_max_length_chars": 200,
+    "cta_text_max_length_chars": 25,
+    "tone_descriptors": ["confident", "action-oriented", "specific"],
+    "pain_point_emphasis_pct": 30,
+    "curiosity_elements": 2,
+    "number_of_variations": 12
+  },
+  "audience_params": {
+    "primary_interests": ["real estate wholesaling", "real estate investing", "fix and flip", "rental property"],
+    "age_range_min": 25,
+    "age_range_max": 60,
+    "geo_exclusions": ["TX", "CA"],
+    "lookalike_source_type": "customer_list",
+    "lookalike_ratio": 0.01,
+    "audience_expansion_enabled": true,
+    "segment_count": 3,
+    "segment_strategy": "interests-based"
+  },
+  "budget_params": {
+    "daily_budget_usd": 50,
+    "daily_max_usd": 300,
+    "kill_threshold_cpl": 15,
+    "keep_range_cpl_min": 8,
+    "keep_range_cpl_max": 15,
+    "scale_threshold_cpl": 8,
+    "scale_increment_pct": 25,
+    "scale_interval_days": 3,
+    "freshness_interval_days": 7,
+    "kill_bottom_half_frequency_days": 3
+  },
+  "audio_params": {
+    "hook_duration_sec": 3,
+    "sample_duration_sec": 5,
+    "reveal_duration_sec": 4,
+    "cta_duration_sec": 3,
+    "total_duration_sec": 15,
+    "audio_codec": "mp3",
+    "bitrate_kbps": 128,
+    "voice_model": "vibevoice",
+    "background_music_enabled": false,
+    "hook_text_overlay": true
+  }
+}

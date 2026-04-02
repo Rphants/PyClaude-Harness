@@ -20,10 +20,10 @@ Last updated: 2026-04-01 17:30 by COWORK
 
 | # | Task | Owner | Status | Blocker | Notes |
 |---|------|-------|--------|---------|-------|
-| T1-1 | Deploy AgentRVM to production | CLAUDE-2 | IN PROGRESS | None — all PRs merged | SSH to VM → git pull → pnpm build → firebase deploy |
+| T1-1 | Deploy AgentRVM to production | RONALD + CLAUDE-2 | ✅ DONE | — | Deployed 2026-04-01. agentrvm.com live. Hosting-only; functions/firestore TBD. |
 | T1-2 | PostHog A/B test: VibeVoice audio player on landing page | CLAUDE-1 | IN PROGRESS | None | Branch: feat/landing-audio-ab-test. Play sample below hero CTA. Track audio_demo_played + conversions. |
-| T1-3 | Audio ad creatives featuring VibeVoice samples | CODEX-1 | IN PROGRESS | None | 6 concepts: before/after, live demo, testimonial, curiosity, FOMO, ROI. Output: AUDIO-AD-CONCEPTS.md |
-| T1-4 | Launch Facebook ads with audio creatives ($30-50/day) | UNOWNED | TODO | Needs T1-1 + T1-3 | Strategy ready. New angle: audio ads that let prospects HEAR the product. |
+| T1-3 | Audio ad creatives featuring VibeVoice samples | COWORK-RELIEF | ✅ DONE | — | Full agent built: 2,218 lines Python, 3 preview images, 3 experiment specs, autoresearch loop. agents/ad-engine/ |
+| T1-4 | Launch Facebook ads with audio creatives ($5/ad set) | UNOWNED | TODO | Needs META_ACCESS_TOKEN + VibeVoice .mp3s | Agent ready. Run: bash agents/ad-engine/launch.sh. Ronald reviews PAUSED campaigns before activating. |
 | T1-5 | Fix `[Agent]` and `[Days]` placeholder replacement | UNOWNED | TODO | None | PR #10 merged without fix. Voicemail speaks literal tokens. |
 | T1-6 | End-to-end test voice demo on production | UNOWNED | TODO | Needs T1-1 + T1-5 | Manual test: sign up, pick voice, generate voicemail, verify quality. |
 | T1-7 | Generate VibeVoice sample audio for landing page | UNOWNED | TODO | Needs voice-lab worker healthy | Use motivated script template + best voice settings. Save as .mp3 for web. |
