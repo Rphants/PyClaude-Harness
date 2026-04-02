@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "description": "Shared knowledge corpus manifest for the super-agent MVP. These sources should be ingested into the shared brain/vector layer so every agent can retrieve official guidance, product constraints, and operating context.",
+  "ingestion_targets": {
+    "human_brain": [
+      "CLAUDE.md",
+      "CODEX.md",
+      "agents/*/AGENT-BRAIN.md"
+    ],
+    "machine_brain": [
+      "AGENT-BRAIN.jsonl",
+      "shared vector index",
+      "official docs snapshots"
+    ]
+  },
+  "required_corpora": [
+    {
+      "id": "claudepy",
+      "name": "ClaudePY / Claude Code",
+      "priority": "critical",
+      "why_it_matters": "The harness is improving a forked Claude Code runtime. The agent needs source material for CLI behavior, auth modes, output envelopes, tool patterns, and failure modes.",
+      "runtime_dependencies": [
+        "ANTHROPIC_API_KEY",
+        "claude CLI on target runtime"
+      ],
+      "sources": [
+        {
+          "label": "Claude Code Docs Overview",
+          "url": "https://code.claude.com/docs/en/overview",
+          "kind": "official_docs"
+        },
+        {
+          "label": "PyClaude-Harness Agent Brain",
+          "url": "local://CLAUDE.md",
+          "kind": "internal_context"
+        },
+        {
+          "label": "PyClaude-Harness Codex Brain",
+          "url": "local://CODEX.md",
+          "kind": "internal_context"
+        }
+      ]
+    },
+    {
+      "id": "canva_connect",
+      "name": "Canva Connect API",
+      "priority": "critical",
+      "why_it_matters": "Needed for polished creative production and export flows in the ad-engine.",
+      "runtime_dependencies": [
+        "CANVA_CLIENT_ID",
+        "CANVA_CLIENT_SECRET",
+        "CANVA_REFRESH_TOKEN"
+      ],
+      "sources": [
+        {
+          "label": "Connect Overview",
+          "url": "https://www.canva.dev/docs/connect/",
+          "kind": "official_docs"
+        },
+        {
+          "label": "Authentication",
+          "url": "https://www.canva.dev/docs/connect/authentication/",
+          "kind": "official_docs"
+        },
+        {
+          "label": "API Requests and Responses",
+          "url": "https://www.canva.dev/docs/connect/api-requests-responses/",
+          "kind": "official_docs"
+        }
+      ]
+    },
+    {
+      "id": "figma",
+      "name": "Figma API and design workflows",
+      "priority": "critical",
+      "why_it_matters": "Needed for design-system context, file inspection, structured creative generation, and MCP-assisted design operations.",
+      "runtime_dependencies": [
+        "FIGMA_ACCESS_TOKEN or Figma MCP session"
+      ],
+      "sources": [
+        {
+          "label": "Figma REST API",
+          "url": "https://developers.figma.com/docs/rest-api/",
+          "kind": "official_docs"
+        },
+        {
+          "label": "Figma Authentication",
+          "url": "https://developers.figma.com/docs/rest-api/authentication/",
+          "kind": "official_docs"
+        },
+        {
+          "label": "Figma Rate Limits",
+          "url": "https://developers.figma.com/docs/rest-api/rate-limits/",
+          "kind": "official_docs"
+        }
+      ]
+    },
+    {
+      "id": "google_stitch",
+      "name": "Google Stitch / Vertex AI image and UI generation",
+      "priority": "critical",
+      "why_it_matters": "Needed for Google-native design generation, ideation, and fallback creative workflows.",
+      "runtime_dependencies": [
+        "GOOGLE_STITCH_PROJECT_ID",
+        "Vertex AI API enabled",
+        "authenticated gcloud or service account path"
+      ],
+      "sources": [
+        {
+          "label": "Vertex AI Image Generation Overview",
+          "url": "https://cloud.google.com/vertex-ai/generative-ai/docs/image/overview",
+          "kind": "official_docs"
+        },
+        {
+          "label": "Vertex AI Documentation",
+          "url": "https://cloud.google.com/vertex-ai/docs/",
+          "kind": "official_docs"
+        },
+        {
+          "label": "Google Stitch Announcement",
+          "url": "https://developers.googleblog.com/en/stitch-a-new-way-to-design-uis/",
+          "kind": "official_docs"
+        }
+      ]
+    },
+    {
+      "id": "meta_ads",
+      "name": "Meta Ads API and policy corpus",
+      "priority": "critical",
+      "why_it_matters": "Needed for live deployment, policy-safe creative generation, experiment launch, and performance feedback.",
+      "runtime_dependencies": [
+        "META_ACCESS_TOKEN",
+        "META_APP_SECRET"
+      ],
+      "sources": [
+        {
+          "label": "Meta Marketing API",
+          "url": "https://developers.facebook.com/docs/marketing-apis/",
+          "kind": "official_docs"
+        },
+        {
+          "label": "Graph API Explorer",
+          "url": "https://developers.facebook.com/tools/explorer/",
+          "kind": "official_docs"
+        },
+        {
+          "label": "Meta Advertising Standards",
+          "url": "https://transparency.fb.com/policies/ad-standards/",
+          "kind": "official_docs"
+        }
+      ]
+    }
+  ],
+  "first_party_corpora": [
+    {
+      "id": "agentrvm_brand_and_site",
+      "name": "AgentRVM brand, landing page, and funnel context",
+      "priority": "critical",
+      "why_it_matters": "The super-agent needs first-party brand truth, offer positioning, CTA patterns, conversion events, and site structure so tool use is aligned with the real business.",
+      "sources": [
+        {
+          "label": "Live Site",
+          "url": "https://agentrvm.com",
+          "kind": "production_property"
+        },
+        {
+          "label": "Current workspace",
+          "url": "local:///Users/ronaldbigger/Documents/New project",
+          "kind": "local_workspace"
+        },
+        {
+          "label": "Ad-focused variant",
+          "url": "local:///Users/ronaldbigger/Documents/agentrvm-variant2-ads",
+          "kind": "local_workspace"
+        },
+        {
+          "label": "Hero variant",
+          "url": "local:///Users/ronaldbigger/Documents/agentrvm-variant2-hero",
+          "kind": "local_workspace"
+        },
+        {
+          "label": "Voice demo polish variant",
+          "url": "local:///Users/ronaldbigger/Documents/agentrvm-voice-demo-v3-polish",
+          "kind": "local_workspace"
+        },
+        {
+          "label": "PostHog preview",
+          "url": "local:///Users/ronaldbigger/Documents/agentrvm-posthog-preview",
+          "kind": "local_workspace"
+        },
+        {
+          "label": "PostHog preview PR",
+          "url": "local:///Users/ronaldbigger/Documents/agentrvm-posthog-preview-pr",
+          "kind": "local_workspace"
+        },
+        {
+          "label": "Variant routing fix",
+          "url": "local:///Users/ronaldbigger/Documents/agentrvm-variant-routing-fix",
+          "kind": "local_workspace"
+        }
+      ]
+    }
+  ],
+  "mvp_rule": "Do not call the super-agent production-ready until ClaudePY, Canva, Figma, Google Stitch/Vertex, and Meta docs are all available to the shared retrieval layer."
+}
