@@ -42,6 +42,8 @@ import urllib.error
 from pathlib import Path
 from typing import Any
 
+from http_utils import urlopen
+
 BASE_URL = "https://api.canva.com/rest/v1"
 TOKEN_URL = f"{BASE_URL}/oauth/token"
 TOKEN_REFRESH_SKEW_SECONDS = 60
@@ -114,7 +116,7 @@ def refresh_access_token(
     req = urllib.request.Request(TOKEN_URL, data=body, headers=headers, method="POST")
 
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urlopen(req) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
         error_body = e.read().decode()
@@ -177,7 +179,7 @@ def api_call(
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
 
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urlopen(req) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
         error_body = e.read().decode()

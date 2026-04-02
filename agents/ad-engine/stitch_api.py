@@ -24,6 +24,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from http_utils import urlopen
+
 AGENT_DIR = Path(__file__).resolve().parent
 REPO_DIR = AGENT_DIR.parent.parent
 DEFAULT_LOCATION = os.environ.get("GOOGLE_STITCH_LOCATION", "us-central1")
@@ -125,7 +127,7 @@ def api_call(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=90) as resp:
+        with urlopen(req, timeout=90) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as exc:
         error_body = exc.read().decode()

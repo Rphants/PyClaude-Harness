@@ -38,6 +38,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from http_utils import urlopen
+
 AGENT_DIR = Path(__file__).parent
 CONFIG_PATH = AGENT_DIR / "config.json"
 BRAIN_PATH = AGENT_DIR / "AGENT-BRAIN.md"
@@ -97,7 +99,7 @@ def api_call(
         req = urllib.request.Request(url, data=body, method=method)
 
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urlopen(req) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
         error_body = e.read().decode()

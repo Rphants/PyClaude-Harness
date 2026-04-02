@@ -34,6 +34,8 @@ import urllib.error
 from pathlib import Path
 from typing import Any
 
+from http_utils import urlopen
+
 BASE_URL = "https://api.figma.com/v1"
 
 
@@ -63,7 +65,7 @@ def api_call(endpoint: str, params: dict | None = None) -> dict[str, Any]:
     req = urllib.request.Request(url, headers=headers)
 
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urlopen(req) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
         error_body = e.read().decode()
@@ -100,7 +102,8 @@ def export_and_download(file_key: str, node_id: str, output_path: str, format: s
     images = result.get("images", {})
     url = images.get(node_id)
     if url:
-        urllib.request.urlretrieve(url, output_path)
+        with urlopen(url) as resp:
+            Path(output_path).write_bytes(resp.read())
         print(f"Exported to: {output_path}")
         return output_path
     else:
