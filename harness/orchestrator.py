@@ -109,6 +109,25 @@ def log_result(commit: str, score: float, tasks_completed: str,
         f.write(line)
 
 
+def _coerce_scalar_like_current(new_value: Any, current_value: Any) -> Any:
+    """Preserve scalar config types when a proposer returns string values."""
+    if isinstance(current_value, bool) and isinstance(new_value, str):
+        lowered = new_value.strip().lower()
+        if lowered in {"true", "false"}:
+            return lowered == "true"
+    if isinstance(current_value, int) and not isinstance(current_value, bool) and isinstance(new_value, str):
+        try:
+            return int(new_value.strip())
+        except ValueError:
+            return new_value
+    if isinstance(current_value, float) and isinstance(new_value, str):
+        try:
+            return float(new_value.strip())
+        except ValueError:
+            return new_value
+    return new_value
+
+
 def apply_proposal(proposal: Proposal, config_path: Path = OPTIMIZE_FILE) -> bool:
     """Apply a proposal's changes to the config file.
 
@@ -150,7 +169,8 @@ def apply_proposal(proposal: Proposal, config_path: Path = OPTIMIZE_FILE) -> boo
         if isinstance(new_val, dict) and isinstance(config.get(actual_key), dict):
             config[actual_key].update(new_val)
         else:
-            config[actual_key] = new_val
+            current_val = config.get(actual_key)
+            config[actual_key] = _coerce_scalar_like_current(new_val, current_val)
         matched_any = True
 
     if not matched_any:

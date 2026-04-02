@@ -144,6 +144,28 @@ class TestLoadHarnessConfig:
         with pytest.raises(FileNotFoundError):
             load_harness_config("nonexistent.json")
 
+    def test_coerces_numeric_string_fields(self, tmp_path):
+        config_path = tmp_path / "optimize.json"
+        config_path.write_text(json.dumps({
+            "system_prompt": "test",
+            "tool_definitions": {},
+            "context_strategy": {},
+            "routing_rules": {},
+            "token_budget": "20000",
+            "temperature": "0.2",
+            "model": "claude-sonnet-4-20250514",
+            "max_turns": "12",
+        }))
+
+        config = load_harness_config(str(config_path))
+
+        assert config["token_budget"] == 20000
+        assert isinstance(config["token_budget"], int)
+        assert config["temperature"] == 0.2
+        assert isinstance(config["temperature"], float)
+        assert config["max_turns"] == 12
+        assert isinstance(config["max_turns"], int)
+
 
 # ---------------------------------------------------------------------------
 # evaluate_all

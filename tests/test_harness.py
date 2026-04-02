@@ -17,7 +17,7 @@ from harness.proposer import (
     load_experiment_history,
 )
 from harness.evaluator import DetailedEvaluation, run_evaluation
-from harness.orchestrator import RESULTS_FILE, init_results_file
+from harness.orchestrator import RESULTS_FILE, apply_proposal, init_results_file
 
 
 # ---------------------------------------------------------------------------
@@ -152,3 +152,27 @@ class TestInitResultsFile:
         monkeypatch.setattr("harness.orchestrator.RESULTS_FILE", target)
         init_results_file()
         assert target.read_text() == "existing data\n"
+
+
+# ---------------------------------------------------------------------------
+# orchestrator — apply_proposal
+# ---------------------------------------------------------------------------
+
+class TestApplyProposal:
+    def test_coerces_numeric_string_for_scalar_sections(self, tmp_path):
+        config_path = tmp_path / "optimize.json"
+        config_path.write_text('{"token_budget": 30000, "temperature": 0.0, "max_turns": 15}\n')
+        proposal = Proposal(
+            hypothesis="Reduce tokens",
+            change_description="Lower token budget",
+            section="TOKEN_BUDGET",
+            old_value="30000",
+            new_value='"20000"',
+            expected_impact="+efficiency",
+        )
+
+        assert apply_proposal(proposal, config_path=config_path) is True
+
+        updated = __import__("json").loads(config_path.read_text())
+        assert updated["token_budget"] == 20000
+        assert isinstance(updated["token_budget"], int)

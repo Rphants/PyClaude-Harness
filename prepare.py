@@ -128,16 +128,29 @@ def load_harness_config(config_path: str = "optimize.json") -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"Config file not found: {config_path}")
     raw = json.loads(path.read_text())
+
+    def as_int(value: Any, default: int) -> int:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
+
+    def as_float(value: Any, default: float) -> float:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+
     # Return with defaults for any missing keys
     return {
         "system_prompt": raw.get("system_prompt", ""),
         "tool_definitions": raw.get("tool_definitions", {}),
         "context_strategy": raw.get("context_strategy", {}),
         "routing_rules": raw.get("routing_rules", {}),
-        "token_budget": raw.get("token_budget", MAX_TOKENS_PER_TASK),
-        "temperature": raw.get("temperature", 0.0),
+        "token_budget": as_int(raw.get("token_budget", MAX_TOKENS_PER_TASK), MAX_TOKENS_PER_TASK),
+        "temperature": as_float(raw.get("temperature", 0.0), 0.0),
         "model": raw.get("model", "claude-sonnet-4-20250514"),
-        "max_turns": raw.get("max_turns", MAX_TURNS_PER_TASK),
+        "max_turns": as_int(raw.get("max_turns", MAX_TURNS_PER_TASK), MAX_TURNS_PER_TASK),
     }
 
 
