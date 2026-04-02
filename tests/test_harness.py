@@ -11,6 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from harness.proposer import (
+    _extract_new_value_from_code_diff,
     Proposal,
     ProposalContext,
     analyze_failures,
@@ -145,6 +146,38 @@ class TestProposeWithClaude:
         assert proposals[0].change_description == "Reduce token budget to improve efficiency"
         captured = capsys.readouterr()
         assert "Claude proposer failed" in captured.err
+
+    def test_prefers_structured_new_value_over_code_diff(self, monkeypatch):
+        class Result:
+            returncode = 0
+            stdout = json.dumps({
+                "result": json.dumps({
+                    "section": "TOKEN_BUDGET",
+                    "change": "Lower token budget",
+                    "hypothesis": "Reduce tokens",
+                    "new_value": 15000,
+                    "code_diff": "--- optimize.json\n+++ optimize.json\n@@\n-  \"token_budget\": 30000,\n+  \"token_budget\": 15000,\n",
+                })
+            })
+
+        monkeypatch.setattr("harness.proposer.subprocess.run", lambda *args, **kwargs: Result())
+
+        proposals = propose_with_claude(self._make_context())
+
+        assert proposals[0].section == "TOKEN_BUDGET"
+        assert proposals[0].new_value == "15000"
+
+
+class TestExtractNewValueFromCodeDiff:
+    def test_extracts_scalar_token_budget_from_unified_diff(self):
+        diff = """--- optimize.json
++++ optimize.json
+@@ -3,7 +3,7 @@
+-  "token_budget": 30000,
++  "token_budget": 15000,
+"""
+
+        assert _extract_new_value_from_code_diff("TOKEN_BUDGET", diff) == 15000
 
 
 # ---------------------------------------------------------------------------

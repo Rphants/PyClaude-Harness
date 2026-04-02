@@ -196,7 +196,12 @@ Current config sections available to modify:
 - MODEL, TEMPERATURE, TOKEN_BUDGET, MAX_TURNS
 
 Output a JSON object with:
-{{"section": "...", "change": "...", "hypothesis": "...", "code_diff": "..."}}
+{{"section": "...", "change": "...", "hypothesis": "...", "new_value": ..., "code_diff": "..."}}
+
+Rules:
+- "new_value" must be the exact JSON value to write for the target section when possible
+- For scalar sections like TOKEN_BUDGET, TEMPERATURE, or MAX_TURNS, output a JSON number or boolean in "new_value"
+- "code_diff" is optional supporting detail, not the primary source of truth
 """
 
     # Dispatch to Claude Code on local machine
@@ -223,12 +228,19 @@ Output a JSON object with:
                 inner_text = inner_text.split("```", 1)[0]
 
             response = json.loads(inner_text.strip())
+
+            new_value = response.get("new_value")
+            if new_value in (None, ""):
+                new_value = _extract_new_value_from_code_diff(
+                    response.get("section", ""),
+                    response.get("code_diff", ""),
+                )
             return [Proposal(
                 hypothesis=response.get("hypothesis", "Claude-proposed change"),
                 change_description=response.get("change", response.get("change_description", "")),
                 section=response.get("section", "SYSTEM_PROMPT"),
                 old_value="",
-                new_value=response.get("code_diff", response.get("new_value", "")),
+                new_value=json.dumps(new_value) if not isinstance(new_value, str) else new_value,
                 expected_impact=response.get("expected_impact", "Claude-estimated"),
                 priority=1,
             )]
@@ -237,3 +249,36 @@ Output a JSON object with:
 
     # Fall back to rule-based proposals
     return generate_proposals(context)
+
+
+def _extract_new_value_from_code_diff(section: str, code_diff: str) -> Any:
+    """Extract a concrete JSON-ish value from a unified diff when possible."""
+    if not code_diff:
+        return code_diff
+
+    target_map = {
+        "TOKEN_BUDGET": "token_budget",
+        "TEMPERATURE": "temperature",
+        "MAX_TURNS": "max_turns",
+        "MODEL": "model",
+        "SYSTEM_PROMPT": "system_prompt",
+    }
+    target_key = target_map.get(section.upper())
+    if not target_key:
+        return code_diff
+
+    for raw_line in code_diff.splitlines():
+        line = raw_line.strip()
+        if not line.startswith("+") or line.startswith("+++"):
+            continue
+        content = line[1:].strip().rstrip(",")
+        if not content.startswith(f'"{target_key}"'):
+            continue
+        _, _, raw_value = content.partition(":")
+        raw_value = raw_value.strip()
+        try:
+            return json.loads(raw_value)
+        except json.JSONDecodeError:
+            return raw_value.strip('"')
+
+    return code_diff
