@@ -238,7 +238,7 @@ def _recommendation(creative: dict, performance: dict) -> str:
         missing = creative["angles_missing"]
         return f"NOT READY: Need {3 - creative['total_creatives']} more creatives. Missing angles: {', '.join(missing[:3])}"
     if performance["decision"] == "NO_DATA":
-        return "READY TO LAUNCH: Creatives are set. Deploy campaigns and start collecting data."
+        return "CREATIVES READY: Minimum offline assets exist, but runtime preflight still needs to pass before live launch."
     if performance["decision"] == "KILL":
         return f"KILL: CPL ${performance['cpl']} exceeds ${performance['kill_threshold']} threshold. Refresh creatives."
     if performance["decision"] == "SCALE":

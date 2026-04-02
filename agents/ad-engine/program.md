@@ -12,9 +12,11 @@ Turn ad spend into qualified leads at the lowest possible cost. Every dollar spe
 
 1. Read this file completely
 2. Read `config.json` for current state
-3. Read `AGENT-BRAIN.md` for accumulated knowledge
-4. Read `~/Downloads/PyClaude-Harness/WAR-RULES.md` for team rules
-5. Read `~/Downloads/PyClaude-Harness/agents/vibevoice-producer/AGENT-BRAIN.md` for latest audio samples
+3. Read `~/Downloads/PyClaude-Harness/knowledge-manifest.json` for the shared docs + brain contract
+4. Run `python preflight.py --mode production --json` before any live launch decision
+5. Read `AGENT-BRAIN.md` for accumulated knowledge
+6. Read `~/Downloads/PyClaude-Harness/WAR-RULES.md` for team rules
+7. Read `~/Downloads/PyClaude-Harness/agents/vibevoice-producer/AGENT-BRAIN.md` for latest audio samples
 
 ## What You Optimize
 
@@ -60,17 +62,18 @@ Turn ad spend into qualified leads at the lowest possible cost. Every dollar spe
 
 ```
 FOREVER:
-  1. READ config.json + AGENT-BRAIN.md
-  2. CHECK vibevoice-producer AGENT-BRAIN.md for new audio samples
-  3. PROPOSE one ad experiment (new copy, new creative, new audience)
-  4. CREATE the ad creative (write copy, describe visual, specify audio)
-  5. OUTPUT to experiments/<id>.json with full spec
-  6. IF Meta API access is available: create campaign via Graph API
-  7. EVALUATE: check CPL, CTR, conversion metrics
-  8. DECIDE: kill (>$15 CPL), keep ($8-15), scale (<$8)
-  9. UPDATE config.json and AGENT-BRAIN.md
-  10. POST status to AGENT-MAILBOX.md
-  11. GOTO 1
+  1. RUN preflight and note missing runtime capabilities
+  2. READ config.json + AGENT-BRAIN.md
+  3. CHECK vibevoice-producer AGENT-BRAIN.md for new audio samples
+  4. PROPOSE one ad experiment (new copy, new creative, new audience)
+  5. CREATE the ad creative (write copy, describe visual, specify audio)
+  6. OUTPUT to experiments/<id>.json with full spec
+  7. IF Meta API access is available: create campaign via Graph API
+  8. EVALUATE: check CPL, CTR, conversion metrics
+  9. DECIDE: kill (>$15 CPL), keep ($8-15), scale (<$8)
+  10. UPDATE config.json and AGENT-BRAIN.md
+  11. POST status to AGENT-MAILBOX.md
+  12. GOTO 1
 ```
 
 ## Budget Rules (from SPRINT-1M.md)

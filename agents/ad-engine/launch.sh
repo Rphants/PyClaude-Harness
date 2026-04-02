@@ -41,12 +41,20 @@ fi
 
 # Verify critical secrets
 echo "  META_ACCESS_TOKEN: ${META_ACCESS_TOKEN:+set (${#META_ACCESS_TOKEN} chars)}${META_ACCESS_TOKEN:-NOT SET}"
+echo "  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:+set (${#ANTHROPIC_API_KEY} chars)}${ANTHROPIC_API_KEY:-NOT SET}"
 echo "  CANVA_CLIENT_ID: ${CANVA_CLIENT_ID:+set}${CANVA_CLIENT_ID:-NOT SET}"
 echo "  CANVA_CLIENT_SECRET: ${CANVA_CLIENT_SECRET:+set}${CANVA_CLIENT_SECRET:-NOT SET}"
 echo "  CANVA_REFRESH_TOKEN: ${CANVA_REFRESH_TOKEN:+set}${CANVA_REFRESH_TOKEN:-NOT SET}"
 echo "  CANVA_ACCESS_TOKEN: ${CANVA_ACCESS_TOKEN:+set}${CANVA_ACCESS_TOKEN:-NOT SET}"
 echo "  FIGMA_ACCESS_TOKEN: ${FIGMA_ACCESS_TOKEN:+set}${FIGMA_ACCESS_TOKEN:-NOT SET}"
+echo "  GOOGLE_STITCH_PROJECT_ID: ${GOOGLE_STITCH_PROJECT_ID:+set}${GOOGLE_STITCH_PROJECT_ID:-NOT SET}"
 echo ""
+
+run_preflight() {
+    local mode="$1"
+    echo "Step 2: Preflight (${mode})..."
+    python3 preflight.py --mode "$mode"
+}
 
 # --- Step 2: Heartbeat — STARTING ---
 heartbeat() {
@@ -74,7 +82,18 @@ cd "$AGENT_DIR"
 EXIT_CODE=0
 
 case "$MODE" in
+    --preflight)
+        if python3 preflight.py --mode production --json; then
+            EXIT_CODE=0
+        else
+            EXIT_CODE=$?
+        fi
+        ;;
+
     --creatives)
+        if ! run_preflight "creatives"; then
+            EXIT_CODE=1
+        else
         echo "Step 3: Generating creatives..."
         python3 creative_generator.py \
             --template stats-card \
@@ -98,53 +117,66 @@ case "$MODE" in
             --cta "Join the Waitlist" \
             --output experiments/preview-fomo.png || true
         echo "  Creatives generated"
+        fi
         ;;
 
     --evaluate)
-        echo "Step 3: Running evaluation..."
-        python3 evaluate.py --report experiments/latest-eval.json
-        EXIT_CODE=$?
+        if ! run_preflight "creatives"; then
+            EXIT_CODE=1
+        else
+            echo "Step 3: Running evaluation..."
+            python3 evaluate.py --report experiments/latest-eval.json
+            EXIT_CODE=$?
+        fi
         ;;
 
     --deploy)
-        echo "Step 3: Deploying to Meta..."
-        if [ -z "${META_ACCESS_TOKEN:-}" ]; then
-            echo "  ERROR: META_ACCESS_TOKEN not set. Cannot deploy."
+        if ! run_preflight "deploy"; then
             EXIT_CODE=1
         else
-            python3 meta_ads.py evaluate
-            echo "  Campaign evaluation complete"
+            echo "Step 3: Deploying to Meta..."
+            if [ -z "${META_ACCESS_TOKEN:-}" ]; then
+                echo "  ERROR: META_ACCESS_TOKEN not set. Cannot deploy."
+                EXIT_CODE=1
+            else
+                python3 meta_ads.py evaluate
+                echo "  Campaign evaluation complete"
+            fi
         fi
         ;;
 
     full|--full)
-        echo "Step 3: Running full autonomous loop..."
+        if ! run_preflight "full"; then
+            EXIT_CODE=1
+        else
+            echo "Step 3: Running full autonomous loop..."
 
-        # 3a: Evaluate current state
-        echo "  3a: Baseline evaluation..."
-        python3 evaluate.py --json > /tmp/ad-engine-baseline.json 2>/dev/null || true
-        heartbeat "working" "baseline evaluation complete" "idea"
+            # 3a: Evaluate current state
+            echo "  3a: Baseline evaluation..."
+            python3 evaluate.py --json > /tmp/ad-engine-baseline.json 2>/dev/null || true
+            heartbeat "working" "baseline evaluation complete" "idea"
 
-        # 3b: Run autoresearch loop
-        echo "  3b: Starting autoresearch loop..."
-        python3 autoresearch.py --max-experiments 10 2>&1 | tee "$AGENT_DIR/run.log"
-        EXIT_CODE=${PIPESTATUS[0]}
+            # 3b: Run autoresearch loop
+            echo "  3b: Starting autoresearch loop..."
+            python3 autoresearch.py --max-experiments 10 2>&1 | tee "$AGENT_DIR/run.log"
+            EXIT_CODE=${PIPESTATUS[0]}
 
-        # 3c: Final evaluation
-        echo "  3c: Final evaluation..."
-        python3 evaluate.py --report experiments/latest-eval.json || true
-        heartbeat "working" "autoresearch loop finished" "worktree-pass"
+            # 3c: Final evaluation
+            echo "  3c: Final evaluation..."
+            python3 evaluate.py --report experiments/latest-eval.json || true
+            heartbeat "working" "autoresearch loop finished" "worktree-pass"
 
-        # 3d: Deploy winners (if we have a token and campaigns improved)
-        if [ -n "${META_ACCESS_TOKEN:-}" ] && [ $EXIT_CODE -eq 0 ]; then
-            echo "  3d: Evaluating active campaigns..."
-            python3 meta_ads.py evaluate || true
+            # 3d: Deploy winners (if we have a token and campaigns improved)
+            if [ -n "${META_ACCESS_TOKEN:-}" ] && [ $EXIT_CODE -eq 0 ]; then
+                echo "  3d: Evaluating active campaigns..."
+                python3 meta_ads.py evaluate || true
+            fi
         fi
         ;;
 
     *)
         echo "Unknown mode: $MODE"
-        echo "Usage: launch.sh [--creatives|--evaluate|--deploy|--full]"
+        echo "Usage: launch.sh [--preflight|--creatives|--evaluate|--deploy|--full]"
         EXIT_CODE=1
         ;;
 esac
