@@ -2,7 +2,6 @@
   "agent": "ad-engine",
   "version": 1,
   "created": "2026-04-01",
-
   "meta": {
     "page_id": "1087752787745473",
     "app_id": "1422908658889833",
@@ -10,7 +9,6 @@
     "pixel_id": "1606520033988956",
     "business_id": "1440762030250265"
   },
-
   "creative_stack": {
     "owner": "ad-engine",
     "must_self_generate_ads": true,
@@ -29,24 +27,55 @@
     ],
     "notes": "The ad-engine is responsible for generating ad concepts, creative assets, copy payloads, and deployment objects. Human review is optional; creation ownership stays with the agent."
   },
-
   "budget": {
     "daily_start": 50,
     "daily_max": 300,
     "kill_threshold_cpl": 15,
-    "keep_range_cpl": [8, 15],
+    "keep_range_cpl": [
+      8,
+      15
+    ],
     "scale_threshold_cpl": 8,
     "scale_increment_pct": 25,
     "scale_interval_days": 3
   },
-
   "audiences": [
-    {"name": "wholesalers-broad", "interests": ["real estate wholesaling", "real estate investing"], "age": "25-55"},
-    {"name": "investors-active", "interests": ["real estate investment", "rental property", "fix and flip"], "age": "30-60"},
-    {"name": "team-leaders", "interests": ["real estate team", "real estate brokerage", "acquisitions"], "age": "30-55"}
+    {
+      "name": "wholesalers-broad",
+      "interests": [
+        "real estate wholesaling",
+        "real estate investing"
+      ],
+      "age": "25-55"
+    },
+    {
+      "name": "investors-active",
+      "interests": [
+        "real estate investment",
+        "rental property",
+        "fix and flip"
+      ],
+      "age": "30-60"
+    },
+    {
+      "name": "team-leaders",
+      "interests": [
+        "real estate team",
+        "real estate brokerage",
+        "acquisitions"
+      ],
+      "age": "30-55"
+    }
   ],
-
-  "active_campaigns": [],
+  "active_campaigns": [
+    {
+      "id": "6944438268761",
+      "name": "AgentRVM Autoresearch Seed 2026-04-02",
+      "objective": "OUTCOME_LEADS",
+      "status": "PAUSED",
+      "created": "2026-04-02T20:19:45.605889Z"
+    }
+  ],
   "experiment_count": 0,
   "best_cpl": null,
   "total_spend": 0,

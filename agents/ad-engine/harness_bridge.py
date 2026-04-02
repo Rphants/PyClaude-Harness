@@ -29,6 +29,7 @@ OPTIMIZE_FILE = AGENT_DIR / "optimize.json"
 RESULTS_FILE = AGENT_DIR / "experiments" / "results.tsv"
 EXPERIMENTS_DIR = AGENT_DIR / "experiments"
 BRAIN_FILE = AGENT_DIR / "AGENT-BRAIN.md"
+CREATIVE_TRAINING_FILE = AGENT_DIR / "creative_training.py"
 
 
 @dataclass
@@ -80,8 +81,11 @@ def get_git_hash() -> str:
 def git_commit(message: str) -> bool:
     """Stage optimize.json and commit."""
     try:
+        paths = [str(OPTIMIZE_FILE)]
+        for pattern in ("auto-*.json", "auto-*.png", "auto-scene-*.png"):
+            paths.extend(str(path) for path in EXPERIMENTS_DIR.glob(pattern))
         subprocess.run(
-            ["git", "add", str(OPTIMIZE_FILE)],
+            ["git", "add", *paths],
             check=True, timeout=10, cwd=AGENT_DIR,
         )
         subprocess.run(
@@ -210,6 +214,44 @@ def evaluate() -> dict[str, Any]:
         return {"composite_score": 0.0, "error": "evaluation timeout (60s)"}
     except Exception as exc:
         return {"composite_score": 0.0, "error": str(exc)}
+
+
+def generate_training_batch(render: bool = True) -> dict[str, Any]:
+    """Generate an autonomous batch of creative specs/assets for evaluation."""
+    if not CREATIVE_TRAINING_FILE.exists():
+        return {"ok": False, "error": "creative_training.py missing"}
+
+    cmd = [sys.executable, str(CREATIVE_TRAINING_FILE), "generate", "--json"]
+    if not render:
+        cmd.append("--no-render")
+
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300,
+            cwd=AGENT_DIR,
+        )
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "creative batch generation timeout"}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+    if result.returncode != 0:
+        return {
+            "ok": False,
+            "error": f"creative batch generation exit {result.returncode}",
+            "stderr": result.stderr,
+        }
+
+    try:
+        payload = json.loads(result.stdout.strip())
+    except json.JSONDecodeError as exc:
+        return {"ok": False, "error": f"creative batch json parse error: {exc}"}
+
+    payload["ok"] = True
+    return payload
 
 
 def load_brain() -> str:

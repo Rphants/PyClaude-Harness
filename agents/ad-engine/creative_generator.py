@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import textwrap
 from pathlib import Path
 from typing import Any
@@ -45,10 +46,11 @@ BRAND_GRAY = "#999999"          # Secondary text
 BRAND_DARK_GRAY = "#333333"     # Borders/accents
 
 # Typography
-HEADLINE_SIZE = 60
-BODY_SIZE = 32
-SMALL_SIZE = 24
-TINY_SIZE = 16
+HEADLINE_SIZE = int(os.environ.get("AD_CREATIVE_HEADLINE_SIZE", "84"))
+BODY_SIZE = int(os.environ.get("AD_CREATIVE_BODY_SIZE", "24"))
+SMALL_SIZE = int(os.environ.get("AD_CREATIVE_SMALL_SIZE", "18"))
+TINY_SIZE = int(os.environ.get("AD_CREATIVE_TINY_SIZE", "14"))
+CTA_SIZE = int(os.environ.get("AD_CREATIVE_CTA_SIZE", "28"))
 
 AGENT_DIR = Path(__file__).parent
 EXPERIMENTS_DIR = AGENT_DIR / "experiments"
@@ -64,39 +66,35 @@ class CreativeGenerator:
     def _init_fonts(self) -> dict[str, Any]:
         """Initialize fonts. Fall back to default if system fonts unavailable."""
         fonts = {}
-        font_paths = [
+        display_paths = [
+            "/System/Library/Fonts/Avenir Next Condensed.ttc",
+            "/System/Library/Fonts/Supplemental/Futura.ttc",
+            "/System/Library/Fonts/HelveticaNeue.ttc",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-            "/System/Library/Fonts/Helvetica.ttc",
-            "C:\\Windows\\Fonts\\arial.ttf",
+        ]
+        body_paths = [
+            "/System/Library/Fonts/Avenir Next.ttc",
+            "/System/Library/Fonts/SFNS.ttf",
+            "/System/Library/Fonts/HelveticaNeue.ttc",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         ]
 
-        # Try to load bold headline font
-        for path in font_paths:
-            try:
-                fonts["headline"] = ImageFont.truetype(path, HEADLINE_SIZE)
-                print(f"  Loaded headline font: {path}")
-                break
-            except (FileNotFoundError, OSError):
-                continue
+        def load_font(candidates: list[str], size: int, label: str) -> Any:
+            for path in candidates:
+                try:
+                    font = ImageFont.truetype(path, size)
+                    print(f"  Loaded {label} font: {path}")
+                    return font
+                except (FileNotFoundError, OSError):
+                    continue
+            return ImageFont.load_default()
 
-        # Try to load body font
-        for path in font_paths:
-            try:
-                fonts["body"] = ImageFont.truetype(path, BODY_SIZE)
-                print(f"  Loaded body font: {path}")
-                break
-            except (FileNotFoundError, OSError):
-                continue
-
-        # Fallback to default if no fonts found
-        if "headline" not in fonts:
-            fonts["headline"] = ImageFont.load_default()
-        if "body" not in fonts:
-            fonts["body"] = ImageFont.load_default()
-
-        fonts["small"] = fonts["body"]  # Simplify for now
-        fonts["tiny"] = fonts["body"]
+        fonts["headline"] = load_font(display_paths, HEADLINE_SIZE, "headline")
+        fonts["body"] = load_font(body_paths, BODY_SIZE, "body")
+        fonts["small"] = load_font(body_paths, SMALL_SIZE, "small")
+        fonts["tiny"] = load_font(body_paths, TINY_SIZE, "tiny")
+        fonts["button"] = load_font(body_paths, CTA_SIZE, "button")
+        fonts["eyebrow"] = load_font(body_paths, 16, "eyebrow")
 
         return fonts
 
@@ -123,6 +121,33 @@ class CreativeGenerator:
         """Wrap text to fit width."""
         return textwrap.wrap(text, width=max_width_chars)
 
+    def _size_dimensions(self, size: str) -> tuple[int, int]:
+        """Map size preset to pixel dimensions."""
+        if size == "feed":
+            return 1080, 1080
+        if size == "story":
+            return 1080, 1920
+        return 1200, 628
+
+    def _fit_cover(
+        self,
+        source: Image.Image,
+        target_width: int,
+        target_height: int,
+        *,
+        focus_x: float = 0.5,
+        focus_y: float = 0.5,
+    ) -> Image.Image:
+        """Resize and crop an image to cover the target area."""
+        src_w, src_h = source.size
+        scale = max(target_width / src_w, target_height / src_h)
+        resized = source.resize((int(src_w * scale), int(src_h * scale)))
+        max_left = max(0, resized.width - target_width)
+        max_top = max(0, resized.height - target_height)
+        left = int(max_left * max(0, min(1, focus_x)))
+        top = int(max_top * max(0, min(1, focus_y)))
+        return resized.crop((left, top, left + target_width, top + target_height))
+
     def _get_text_bbox(self, draw: ImageDraw.ImageDraw, text: str, font: Any) -> tuple[int, int, int, int]:
         """Get text bounding box (fallback for older Pillow versions)."""
         try:
@@ -148,7 +173,6 @@ class CreativeGenerator:
             width, height = 1200, 628
 
         img = Image.new("RGB", (width, height), BRAND_DARK)
-        draw = ImageDraw.Draw(img)
 
         # Padding
         padding = 40
@@ -513,6 +537,173 @@ class CreativeGenerator:
 
         return img
 
+    def generate_hybrid_ugc(
+        self,
+        headline: str,
+        body: str = "",
+        cta_text: str = "Hear the AI voicemail",
+        background_image: str = "",
+        brand_label: str = "AgentRVM",
+        proof_text: str = "40% callback rate",
+        size: str = "feed",
+    ) -> Image.Image:
+        """Generate a hybrid ad: AI-generated scene + deterministic brand layout."""
+        width, height = self._size_dimensions(size)
+
+        img = Image.new("RGB", (width, height), BRAND_DARK)
+        draw = ImageDraw.Draw(img)
+
+        if size == "story":
+            padding = 56
+            photo_width = int(width * 0.78)
+            photo_height = int(height * 0.4)
+            photo_x = (width - photo_width) // 2
+            photo_y = int(height * 0.48)
+        elif size == "link-ad":
+            padding = 36
+            photo_width = int(width * 0.48)
+            photo_height = int(height * 0.76)
+            photo_x = width - padding - photo_width
+            photo_y = (height - photo_height) // 2
+        else:
+            padding = 56
+            photo_width = 496
+            photo_height = 672
+            photo_x = width - padding - photo_width
+            photo_y = 164
+
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([(0, 0), (width, height)], fill="#07111c")
+        for y in range(height):
+            shade = int(12 + (18 * (y / max(1, height))))
+            draw.line([(0, y), (width, y)], fill=(7, shade, 28))
+
+        if background_image:
+            source = Image.open(background_image).convert("RGB")
+            photo = self._fit_cover(source, photo_width, photo_height, focus_x=1.0, focus_y=0.5)
+            shadow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+            shadow_draw = ImageDraw.Draw(shadow)
+            shadow_draw.rounded_rectangle(
+                [(photo_x + 16, photo_y + 18), (photo_x + photo_width + 16, photo_y + photo_height + 18)],
+                radius=26,
+                fill=(0, 0, 0, 110),
+            )
+            img = Image.alpha_composite(img.convert("RGBA"), shadow).convert("RGB")
+            img.paste(photo, (photo_x, photo_y))
+
+            # Darken the edge nearest the text column for readability.
+            edge = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+            edge_draw = ImageDraw.Draw(edge)
+            for i in range(photo_width):
+                opacity = int(135 * max(0, 1 - i / (photo_width * 0.32)))
+                edge_x = photo_x + i
+                edge_draw.line(
+                    [(edge_x, photo_y), (edge_x, photo_y + photo_height)],
+                    fill=(7, 17, 28, opacity),
+                )
+            img = Image.alpha_composite(img.convert("RGBA"), edge).convert("RGB")
+            draw = ImageDraw.Draw(img)
+            draw.rounded_rectangle(
+                [(photo_x, photo_y), (photo_x + photo_width, photo_y + photo_height)],
+                radius=26,
+                outline=(255, 255, 255, 30),
+                width=2,
+            )
+
+        brand_y = padding + 10
+        draw.ellipse([(padding, brand_y + 10), (padding + 16, brand_y + 26)], fill=BRAND_ORANGE)
+        draw.text(
+            (padding + 30, brand_y),
+            brand_label,
+            fill=BRAND_WHITE,
+            font=self.fonts["small"],
+            anchor="lt",
+        )
+        draw.text(
+            (padding, brand_y + 38),
+            "AI VOICEMAIL FOR WHOLESALERS",
+            fill="#89A2B8",
+            font=self.fonts["eyebrow"],
+            anchor="lt",
+        )
+
+        chip_x = padding
+        chip_y = padding + 88
+        chip_width = 220
+        chip_height = 34
+        draw.rounded_rectangle(
+            [(chip_x, chip_y), (chip_x + chip_width, chip_y + chip_height)],
+            radius=17,
+            fill="#102334",
+            outline="#1A334A",
+            width=1,
+        )
+        draw.text(
+            (chip_x + 18, chip_y + chip_height // 2),
+            proof_text.upper(),
+            fill="#D8E6F2",
+            font=self.fonts["eyebrow"],
+            anchor="lm",
+        )
+
+        headline_y = padding + 142
+        headline_wrapped = self._wrap_text(headline, max_width_chars=15 if size != "link-ad" else 13)
+        for line in headline_wrapped:
+            fill = BRAND_ORANGE if any(token in line for token in ["$", "%", "24/7", "40%"]) else BRAND_WHITE
+            draw.text(
+                (padding, headline_y),
+                line,
+                fill=fill,
+                font=self.fonts["headline"],
+                anchor="lt",
+            )
+            headline_y += HEADLINE_SIZE + 4
+
+        cta_width = 320 if size == "link-ad" else 370
+        cta_height = 66
+        cta_y = headline_y + 26
+        draw.rounded_rectangle(
+            [(padding, cta_y), (padding + cta_width, cta_y + cta_height)],
+            radius=18,
+            fill=BRAND_ORANGE,
+        )
+        draw.text(
+            (padding + cta_width // 2, cta_y + cta_height // 2),
+            cta_text,
+            fill=BRAND_DARK,
+            font=self.fonts["button"],
+            anchor="mm",
+        )
+
+        body_y = cta_y + cta_height + 34
+        body_wrapped = self._wrap_text(body, max_width_chars=24 if size != "link-ad" else 20)
+        for line in body_wrapped:
+            draw.text(
+                (padding, body_y),
+                line,
+                fill="#D7E2EC",
+                font=self.fonts["body"],
+                anchor="lt",
+            )
+            body_y += BODY_SIZE + 10
+
+        waveform_y = photo_y + photo_height - 76
+        self._draw_waveform(draw, photo_x + 24, waveform_y, photo_width - 48, 34)
+        draw.rounded_rectangle(
+            [(photo_x + 24, photo_y + 24), (photo_x + 178, photo_y + 58)],
+            radius=16,
+            fill=(0, 0, 0, 120),
+        )
+        draw.text(
+            (photo_x + 101, photo_y + 41),
+            "MISSED CALL",
+            fill=BRAND_WHITE,
+            font=self.fonts["eyebrow"],
+            anchor="mm",
+        )
+
+        return img
+
 
 def main():
     """CLI interface."""
@@ -520,7 +711,7 @@ def main():
     parser.add_argument(
         "--template",
         required=True,
-        choices=["stats-card", "before-after", "testimonial", "single-image"],
+        choices=["stats-card", "before-after", "testimonial", "single-image", "hybrid-ugc"],
         help="Creative template type",
     )
     parser.add_argument("--headline", required=True, help="Main headline")
@@ -536,6 +727,9 @@ def main():
         help='Stats as JSON: \'[["Label 1", "Value 1"], ["Label 2", "Value 2"]]\'',
     )
     parser.add_argument("--cta", default="Get Early Access", help="CTA button text")
+    parser.add_argument("--background-image", default="", help="Optional background/source image path")
+    parser.add_argument("--brand-label", default="AgentRVM", help="Brand label text")
+    parser.add_argument("--proof-text", default="40% callback rate", help="Small proof chip text")
     parser.add_argument(
         "--size",
         default="feed",
@@ -586,6 +780,17 @@ def main():
             quote=args.quote,
             author=args.author,
             cta_text=args.cta,
+            size=args.size,
+        )
+
+    elif args.template == "hybrid-ugc":
+        img = gen.generate_hybrid_ugc(
+            headline=args.headline,
+            body=args.body,
+            cta_text=args.cta,
+            background_image=args.background_image,
+            brand_label=args.brand_label,
+            proof_text=args.proof_text,
             size=args.size,
         )
 

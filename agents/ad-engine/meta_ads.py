@@ -38,6 +38,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+import requests
+
 from http_utils import urlopen
 
 AGENT_DIR = Path(__file__).parent
@@ -62,12 +64,32 @@ def save_config(config: dict[str, Any]) -> None:
         f.write("\n")
 
 
-def get_token() -> str:
+def get_token_value() -> str | None:
     token = os.environ.get("META_ACCESS_TOKEN")
+    if token:
+        return token
+
+    try:
+        sys.path.insert(0, str(AGENT_DIR.parent.parent))
+        from src.coordinator.secrets import get_secret
+
+        token = get_secret("META_ACCESS_TOKEN")
+        if token:
+            return token
+    except Exception:
+        pass
+    return None
+
+
+def get_token() -> str:
+    token = get_token_value()
     if not token:
-        print("ERROR: META_ACCESS_TOKEN env var not set.", file=sys.stderr)
+        print("ERROR: META_ACCESS_TOKEN not set in env or secrets backend.", file=sys.stderr)
         print("Get one at: https://developers.facebook.com/tools/explorer/", file=sys.stderr)
-        print("Required permissions: ads_management, pages_manage_posts, pages_read_engagement", file=sys.stderr)
+        print(
+            "Required permissions: ads_management, pages_manage_posts, pages_read_engagement",
+            file=sys.stderr,
+        )
         sys.exit(1)
     return token
 
@@ -121,6 +143,7 @@ def create_campaign(name: str, objective: str = "OUTCOME_LEADS", status: str = "
             "name": name,
             "objective": objective,
             "status": status,
+            "is_adset_budget_sharing_enabled": "false",
             "special_ad_categories": "[]",  # No special categories for B2B SaaS
         },
     )
@@ -155,14 +178,23 @@ def create_adset(
     if audience is None:
         audience = config["audiences"][0]
 
-    targeting = {
+    targeting: dict[str, Any] = {
         "geo_locations": {"countries": ["US"]},
         "age_min": int(audience.get("age", "25-55").split("-")[0]),
         "age_max": int(audience.get("age", "25-55").split("-")[1]),
-        "flexible_spec": [
-            {"interests": [{"name": interest} for interest in audience.get("interests", [])]}
-        ],
+        # Meta now requires the Advantage audience flag even for broad manual targeting.
+        "targeting_automation": {"advantage_audience": 0},
     }
+
+    interests = []
+    for interest in audience.get("interests", []):
+        if isinstance(interest, dict) and interest.get("id"):
+            interests.append({"id": str(interest["id"])})
+        elif isinstance(interest, str) and interest.isdigit():
+            interests.append({"id": interest})
+
+    if interests:
+        targeting["flexible_spec"] = [{"interests": interests}]
 
     result = api_call(
         f"{ad_account}/adsets",
@@ -172,7 +204,8 @@ def create_adset(
             "campaign_id": campaign_id,
             "daily_budget": str(daily_budget_cents),
             "billing_event": "IMPRESSIONS",
-            "optimization_goal": "LEAD_GENERATION",
+            "optimization_goal": "OFFSITE_CONVERSIONS",
+            "destination_type": "WEBSITE",
             "bid_strategy": "LOWEST_COST_WITHOUT_CAP",
             "targeting": json.dumps(targeting),
             "promoted_object": json.dumps({"pixel_id": pixel_id, "custom_event_type": "LEAD"}),
@@ -180,7 +213,17 @@ def create_adset(
             "start_time": (datetime.utcnow() + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S+0000"),
         },
     )
-    print(f"Ad Set created: {result.get('id')} (budget=${daily_budget_cents/100:.2f}/day, status={status})")
+    adset_id = result.get("id")
+    print(f"Ad Set created: {adset_id} (budget=${daily_budget_cents/100:.2f}/day, status={status})")
+    config.setdefault("active_adsets", []).append({
+        "id": adset_id,
+        "campaign_id": campaign_id,
+        "name": name,
+        "status": status,
+        "audience": audience.get("name") if isinstance(audience, dict) else None,
+        "created": datetime.utcnow().isoformat() + "Z",
+    })
+    save_config(config)
     return result
 
 
@@ -201,21 +244,29 @@ def create_ad(
     with spec_path.open() as f:
         spec = json.load(f)
 
+    image_hash = None
+    if spec.get("image_path"):
+        image_hash = upload_image(spec["image_path"])
+
     # Build ad creative
+    link_data: dict[str, Any] = {
+        "message": spec["primary_text"],
+        "link": spec.get("url", "https://agentrvm.com"),
+        "name": spec["headline"],
+        "description": spec.get("description", ""),
+        "call_to_action": {
+            "type": spec.get("cta_type", "LEARN_MORE"),
+            "value": {"link": spec.get("url", "https://agentrvm.com")},
+        },
+    }
+    if image_hash:
+        link_data["image_hash"] = image_hash
+
     creative_data = {
         "name": spec.get("name", "Ad Creative"),
         "object_story_spec": json.dumps({
             "page_id": page_id,
-            "link_data": {
-                "message": spec["primary_text"],
-                "link": spec.get("url", "https://agentrvm.com"),
-                "name": spec["headline"],
-                "description": spec.get("description", ""),
-                "call_to_action": {
-                    "type": spec.get("cta_type", "LEARN_MORE"),
-                    "value": {"link": spec.get("url", "https://agentrvm.com")},
-                },
-            },
+            "link_data": link_data,
         }),
     }
 
@@ -239,8 +290,47 @@ def create_ad(
             "status": status,
         },
     )
-    print(f"Ad created: {ad_result.get('id')} (status={status})")
+    ad_id = ad_result.get("id")
+    config.setdefault("active_ads", []).append({
+        "id": ad_id,
+        "adset_id": adset_id,
+        "name": spec.get("name", "Ad"),
+        "status": status,
+        "creative_spec": spec.get("id"),
+        "created": datetime.utcnow().isoformat() + "Z",
+    })
+    save_config(config)
+    print(f"Ad created: {ad_id} (status={status})")
     return ad_result
+
+
+def upload_image(image_path: str) -> str:
+    """Upload an image asset and return its Meta image hash."""
+    config = load_config()
+    ad_account = config["meta"]["ad_account"]
+
+    path = Path(image_path)
+    if not path.is_absolute():
+        path = EXPERIMENTS_DIR / path
+    if not path.exists():
+        raise FileNotFoundError(f"Image not found: {path}")
+
+    token = get_token()
+    response = requests.post(
+        f"{BASE_URL}/{ad_account}/adimages",
+        data={"access_token": token},
+        files={"filename": (path.name, path.open("rb"), "image/png")},
+        timeout=90,
+    )
+    if response.status_code >= 400:
+        raise RuntimeError(f"Meta image upload failed ({response.status_code}): {response.text}")
+    body = response.json()
+    images = body.get("images", {})
+    if path.name in images and images[path.name].get("hash"):
+        image_hash = images[path.name]["hash"]
+        print(f"Uploaded image: {path.name} (hash={image_hash})")
+        return image_hash
+    raise RuntimeError(f"Meta image upload response missing hash: {body}")
 
 
 # --- Reporting ---

@@ -13,6 +13,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import requests
+
 AGENT_DIR = Path(__file__).resolve().parent
 REPO_DIR = AGENT_DIR.parent.parent
 CONFIG_PATH = AGENT_DIR / "config.json"
@@ -107,10 +109,59 @@ def google_stitch_status() -> dict[str, Any]:
     return status
 
 
+def meta_status(config: dict[str, Any]) -> dict[str, Any]:
+    status: dict[str, Any] = {
+        "script_present": file_present(AGENT_DIR / "meta_ads.py"),
+        "token_present": secret_present("META_ACCESS_TOKEN"),
+        "ready": False,
+    }
+    if not status["script_present"]:
+        status["error"] = "meta_ads.py missing"
+        return status
+    if not status["token_present"]:
+        status["error"] = "META_ACCESS_TOKEN missing"
+        return status
+
+    token = get_secret("META_ACCESS_TOKEN")
+    ad_account = config.get("meta", {}).get("ad_account")
+    if not token or not ad_account:
+        status["error"] = "Meta token or ad account config missing"
+        return status
+
+    try:
+        resp = requests.get(
+            f"https://graph.facebook.com/v21.0/{ad_account}",
+            params={"fields": "id,name,account_status", "access_token": token},
+            timeout=20,
+        )
+        payload = resp.json()
+    except Exception as exc:
+        status["error"] = f"Meta healthcheck failed: {exc}"
+        return status
+
+    if resp.status_code == 200:
+        status.update(
+            {
+                "ready": True,
+                "account_id": payload.get("id"),
+                "account_name": payload.get("name"),
+                "account_status": payload.get("account_status"),
+            }
+        )
+        return status
+
+    error = payload.get("error", {})
+    status["error"] = error.get("message") or f"HTTP {resp.status_code}"
+    status["error_code"] = error.get("code")
+    status["error_subcode"] = error.get("error_subcode")
+    return status
+
+
 def build_report(mode: str) -> dict[str, Any]:
     config = load_json(CONFIG_PATH)
     knowledge_manifest = load_json(KNOWLEDGE_MANIFEST_PATH)
     stitch = google_stitch_status()
+    meta = meta_status(config)
 
     gcloud_account = command_status(
         ["gcloud", "auth", "list", "--filter=status:ACTIVE", "--format=value(account)"]
@@ -121,7 +172,6 @@ def build_report(mode: str) -> dict[str, Any]:
     secrets = {
         "ANTHROPIC_API_KEY": secret_present("ANTHROPIC_API_KEY"),
         "META_ACCESS_TOKEN": secret_present("META_ACCESS_TOKEN"),
-        "META_APP_SECRET": secret_present("META_APP_SECRET"),
         "CANVA_CLIENT_ID": secret_present("CANVA_CLIENT_ID"),
         "CANVA_CLIENT_SECRET": secret_present("CANVA_CLIENT_SECRET"),
         "CANVA_REFRESH_TOKEN": secret_present("CANVA_REFRESH_TOKEN"),
@@ -171,8 +221,7 @@ def build_report(mode: str) -> dict[str, Any]:
         },
         "google_stitch": stitch,
         "meta_ads": {
-            "script_present": file_present(AGENT_DIR / "meta_ads.py"),
-            "ready": file_present(AGENT_DIR / "meta_ads.py") and secrets["META_ACCESS_TOKEN"],
+            **meta,
         },
         "slack": {
             "script_present": True,
@@ -210,7 +259,7 @@ def build_report(mode: str) -> dict[str, Any]:
         warn(providers["google_stitch"]["ready"], "Google Stitch / Vertex runtime is missing.")
         warn(providers["video_composer"]["ready"], "Video composer is not ready; ffmpeg is missing.")
     elif mode == "deploy":
-        require(providers["meta_ads"]["ready"], "Meta deployment is blocked because META_ACCESS_TOKEN is missing.")
+        require(providers["meta_ads"]["ready"], "Meta deployment is blocked because META runtime auth is invalid.")
     elif mode == "full":
         require(providers["creative_generator"]["ready"], "Local creative generation is not ready.")
         require(providers["claudepy"]["ready"], "ClaudePY runtime is not ready (missing CLI or ANTHROPIC_API_KEY).")
@@ -256,6 +305,8 @@ def build_report(mode: str) -> dict[str, Any]:
             "gcloud is installed but cannot mint an access token non-interactively. "
             "Run gcloud auth login and gcloud auth application-default login."
         )
+    if providers["meta_ads"].get("error"):
+        warnings.append(f"Meta healthcheck failed: {providers['meta_ads']['error']}")
 
     creative_stack = config.get("creative_stack", {})
     if creative_stack.get("must_self_generate_ads") is not True:

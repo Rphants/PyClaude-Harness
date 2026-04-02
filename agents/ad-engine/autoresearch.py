@@ -34,6 +34,7 @@ from harness_bridge import (
     Proposal,
     apply_proposal,
     evaluate,
+    generate_training_batch,
     get_git_hash,
     git_commit,
     git_rollback,
@@ -159,6 +160,12 @@ def run_single_experiment(
         logger.error(f"Failed to apply proposal")
         return {"status": "error", "message": "Failed to apply proposal"}
 
+    generation = generate_training_batch(render=True)
+    if not generation.get("ok"):
+        logger.error(f"Creative generation failed: {generation.get('error')}")
+        git_rollback()
+        return {"status": "error", "message": generation.get("error", "Creative generation failed")}
+
     # Commit
     if not git_commit(f"experiment: {description}"):
         logger.error(f"Failed to commit")
@@ -224,6 +231,10 @@ def run_optimization_loop(
 
     # Establish baseline
     logger.info("Establishing baseline...")
+    generation = generate_training_batch(render=True)
+    if not generation.get("ok"):
+        logger.error(f"Failed to generate baseline batch: {generation.get('error')}")
+        return []
     try:
         baseline_eval = evaluate()
         baseline_score = baseline_eval.get("composite_score", 0.0)

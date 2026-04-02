@@ -94,29 +94,9 @@ case "$MODE" in
         if ! run_preflight "creatives"; then
             EXIT_CODE=1
         else
-        echo "Step 3: Generating creatives..."
-        python3 creative_generator.py \
-            --template stats-card \
-            --headline "10,000 Voicemails. Zero Phone Calls." \
-            --stats '[["Callback Rate", "40%"], ["Cost Per Message", "$0.001"]]' \
-            --cta "Get Early Access" \
-            --output experiments/preview-stats-card.png || true
-
-        python3 creative_generator.py \
-            --template testimonial \
-            --headline "40% callback rate." \
-            --quote "This is the best tool I have used." \
-            --author "Sarah, Texas Wholesaler" \
-            --cta "Get Early Access" \
-            --output experiments/preview-testimonial.png || true
-
-        python3 creative_generator.py \
-            --template single-image \
-            --headline "While you dial, your competitor's AI left 500 voicemails." \
-            --body "Press play. Hear why 47 wholesalers already switched." \
-            --cta "Join the Waitlist" \
-            --output experiments/preview-fomo.png || true
-        echo "  Creatives generated"
+        echo "Step 3: Generating autonomous creative batch..."
+        python3 creative_training.py generate --json > experiments/auto-batch-run.json
+        echo "  Autonomous creative batch generated"
         fi
         ;;
 
