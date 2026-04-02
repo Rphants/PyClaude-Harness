@@ -79,23 +79,21 @@ def git_commit(message: str) -> bool:
         return False
 
 
-def git_rollback() -> bool:
-    """Roll back the last commit, stashing uncommitted work first (P0-4 fix)."""
+def git_rollback(
+    original_config_text: str,
+    config_path: Path = OPTIMIZE_FILE,
+) -> bool:
+    """Roll back the last experiment commit and restore the prior config text.
+
+    This preserves unrelated uncommitted files like results.tsv and also
+    restores any pre-existing dirty baseline in optimize.json.
+    """
     try:
-        # Stash any uncommitted changes (e.g. results.tsv) before reset
         subprocess.run(
-            ["git", "stash", "--include-untracked"],
-            capture_output=True, timeout=10,
-        )
-        subprocess.run(
-            ["git", "reset", "--hard", "HEAD~1"],
+            ["git", "reset", "--mixed", "HEAD~1"],
             check=True, capture_output=True, timeout=10,
         )
-        # Restore stashed work
-        subprocess.run(
-            ["git", "stash", "pop"],
-            capture_output=True, timeout=10,
-        )
+        config_path.write_text(original_config_text)
         return True
     except subprocess.CalledProcessError:
         return False
@@ -192,6 +190,7 @@ def run_single_experiment(
     Returns a dict with experiment results.
     """
     description = proposal.change_description
+    original_config_text = OPTIMIZE_FILE.read_text()
 
     # Apply the proposed change to optimize.json
     if not apply_proposal(proposal):
@@ -207,7 +206,7 @@ def run_single_experiment(
         score = evaluate_composite()
     except Exception as exc:
         log_result(commit, 0.0, "0/0", "crash", description)
-        git_rollback()
+        git_rollback(original_config_text)
         return {"status": "crash", "error": str(exc), "commit": commit}
 
     # Get detailed evaluation for logging
@@ -230,7 +229,7 @@ def run_single_experiment(
         }
     else:
         log_result(commit, score, tasks_str, "discard", description)
-        git_rollback()
+        git_rollback(original_config_text)
         return {
             "status": "discard",
             "commit": commit,

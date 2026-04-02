@@ -19,7 +19,7 @@ from harness.proposer import (
     propose_with_claude,
 )
 from harness.evaluator import DetailedEvaluation, run_evaluation
-from harness.orchestrator import RESULTS_FILE, apply_proposal, init_results_file
+from harness.orchestrator import RESULTS_FILE, apply_proposal, git_rollback, init_results_file
 
 
 # ---------------------------------------------------------------------------
@@ -208,3 +208,21 @@ class TestApplyProposal:
         updated = __import__("json").loads(config_path.read_text())
         assert updated["token_budget"] == 20000
         assert isinstance(updated["token_budget"], int)
+
+
+class TestGitRollback:
+    def test_restores_original_config_text_after_reset(self, tmp_path, monkeypatch):
+        config_path = tmp_path / "optimize.json"
+        original_text = '{"token_budget": 30000}\n'
+        config_path.write_text('{"token_budget": 20000}\n')
+        calls = []
+
+        def fake_run(args, **kwargs):
+            calls.append(args)
+            return None
+
+        monkeypatch.setattr("harness.orchestrator.subprocess.run", fake_run)
+
+        assert git_rollback(original_text, config_path=config_path) is True
+        assert calls == [["git", "reset", "--mixed", "HEAD~1"]]
+        assert config_path.read_text() == original_text
