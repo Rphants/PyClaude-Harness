@@ -181,6 +181,125 @@ ANGLE_BLUEPRINTS: list[dict[str, str]] = [
     },
 ]
 
+HEADLINE_STYLE_VARIANTS: dict[str, dict[str, str]] = {
+    "operator": {},
+    "speed": {
+        "pain-point": "Seller signal found. Move first.",
+        "fomo": "First signal. Faster callback.",
+        "roi": "One callback can cover months.",
+        "curiosity": "Hear fast outreach at work.",
+        "social-proof": "Top teams move first.",
+        "audio-first": "Voice that wins callbacks.",
+    },
+    "proof": {
+        "pain-point": "Seller signal. Callback proof.",
+        "fomo": "First outreach. Real callback edge.",
+        "roi": "One callback. Real margin lift.",
+        "curiosity": "The callback starts here.",
+        "social-proof": "Operators trust signal-first outreach.",
+        "audio-first": "Natural voice. Faster callback.",
+    },
+    "threat": {
+        "pain-point": "Late outreach loses callbacks.",
+        "fomo": "Your competitor moved first.",
+        "roi": "Slow follow-up burns margin.",
+        "curiosity": "What late teams never hear.",
+        "social-proof": "Slow teams lose the lead.",
+        "audio-first": "Weak voicemails lose callbacks.",
+    },
+}
+
+BODY_STYLE_VARIANTS: dict[str, dict[str, str]] = {
+    "operator": {},
+    "competitive": {
+        "pain-point": "When seller intent shows up, AgentRVM starts outbound follow-up before slower competitors react.",
+        "fomo": "Seller signals trigger outreach while other wholesalers are still pulling lists.",
+        "roi": "One faster callback can cover months of seller-signal-driven outreach.",
+        "curiosity": "Hear what happens when seller intent is detected before another team reacts.",
+        "social-proof": "The edge is timing: detect seller intent, trigger outreach, win the callback window.",
+        "audio-first": "The voicemail sounds natural because the system acts on seller signals at the right moment.",
+    },
+    "proof": {
+        "pain-point": "Seller intent is detected, outbound follow-up starts, and your team keeps working live deals.",
+        "fomo": "First-to-outreach matters because callbacks go to the team that reacts before the market does.",
+        "roi": "A single callback can justify the cost when your outreach starts from real seller signals.",
+        "curiosity": "The difference is not the voice alone; it is the signal that tells you when to move.",
+        "social-proof": "Serious operators use seller-signal data to start outreach before slower teams.",
+        "audio-first": "Hear the outbound voicemail, then remember the real edge is seller-signal timing.",
+    },
+    "margin": {
+        "pain-point": "Every late callback costs margin, so AgentRVM starts outreach when seller intent appears.",
+        "fomo": "A first callback can decide who wins the deal when sellers are already signaling intent.",
+        "roi": "One protected callback can pay for weeks of automated outreach and seller-signal triage.",
+        "curiosity": "Most teams never hear the outreach that protects margin because they react too late.",
+        "social-proof": "Operators protecting margin start with seller signals, not another batch of blind calls.",
+        "audio-first": "The voice matters because it lands while the opportunity is still warm.",
+    },
+}
+
+CTA_STYLE_VARIANTS: dict[str, dict[str, str]] = {
+    "listen": {},
+    "proof": {
+        "pain-point": "See the proof",
+        "fomo": "See the edge",
+        "roi": "See the margin",
+        "curiosity": "See the reveal",
+        "social-proof": "See proof",
+        "audio-first": "See the proof",
+    },
+    "speed": {
+        "pain-point": "Move first",
+        "fomo": "Beat them",
+        "roi": "Protect margin",
+        "curiosity": "Play it now",
+        "social-proof": "Get the edge",
+        "audio-first": "Hear it now",
+    },
+    "operator": {
+        "pain-point": "Get the edge",
+        "fomo": "See it work",
+        "roi": "See it work",
+        "curiosity": "Hear the move",
+        "social-proof": "See the system",
+        "audio-first": "Hear the proof",
+    },
+}
+
+PROOF_TEXT_VARIANTS: dict[str, dict[str, str]] = {
+    "signal": {},
+    "callback": {
+        "pain-point": "callback proof",
+        "fomo": "callback edge",
+        "roi": "callback leverage",
+        "curiosity": "callback reveal",
+        "social-proof": "callback rate",
+        "audio-first": "callback proof",
+    },
+    "speed": {
+        "pain-point": "first to outreach",
+        "fomo": "moved first",
+        "roi": "first callback wins",
+        "curiosity": "fast follow-up",
+        "social-proof": "speed advantage",
+        "audio-first": "fast callback",
+    },
+    "margin": {
+        "pain-point": "margin protection",
+        "fomo": "deal margin",
+        "roi": "margin leverage",
+        "curiosity": "callback economics",
+        "social-proof": "margin discipline",
+        "audio-first": "margin proof",
+    },
+}
+
+SCENE_STYLE_SUFFIX: dict[str, str] = {
+    "documentary": "documentary realism, tactile workspace detail, authentic operator mood.",
+    "editorial": "editorial polish, premium contrast, magazine-grade composition, intentional styling.",
+    "ugc": "premium UGC realism, phone-shot intimacy, lived-in details, unpolished authenticity.",
+    "war-room": "deal desk war-room energy, multiple monitors, urgent operator workflow, tactical intensity.",
+}
+
 
 def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text()) if path.exists() else {}
@@ -192,6 +311,37 @@ def load_text(path: Path) -> str:
 
 def fit_text(text: str, max_chars: int) -> str:
     return text if len(text) <= max_chars else text[: max_chars - 1].rstrip() + "…"
+
+
+def apply_creative_strategy(blueprint: dict[str, str], optimize: dict[str, Any]) -> dict[str, str]:
+    strategy = optimize.get("creative_strategy", {})
+    if not isinstance(strategy, dict):
+        return dict(blueprint)
+
+    angle = blueprint["angle"]
+    variant = dict(blueprint)
+
+    headline_style = str(strategy.get("headline_style", "operator")).strip().lower()
+    if headline_style in HEADLINE_STYLE_VARIANTS:
+        variant["headline"] = HEADLINE_STYLE_VARIANTS[headline_style].get(angle, variant["headline"])
+
+    body_style = str(strategy.get("body_style", "operator")).strip().lower()
+    if body_style in BODY_STYLE_VARIANTS:
+        variant["primary_text"] = BODY_STYLE_VARIANTS[body_style].get(angle, variant["primary_text"])
+
+    cta_style = str(strategy.get("cta_style", "listen")).strip().lower()
+    if cta_style in CTA_STYLE_VARIANTS:
+        variant["cta"] = CTA_STYLE_VARIANTS[cta_style].get(angle, variant["cta"])
+
+    proof_style = str(strategy.get("proof_style", "signal")).strip().lower()
+    if proof_style in PROOF_TEXT_VARIANTS:
+        variant["proof_text"] = PROOF_TEXT_VARIANTS[proof_style].get(angle, variant["proof_text"])
+
+    scene_style = str(strategy.get("scene_style", "documentary")).strip().lower()
+    if scene_style in SCENE_STYLE_SUFFIX:
+        variant["scene_prompt"] = f"{variant['scene_prompt']} {SCENE_STYLE_SUFFIX[scene_style]}"
+
+    return variant
 
 
 def render_env(optimize: dict[str, Any]) -> dict[str, str]:
@@ -548,7 +698,7 @@ def generate_batch(
     body_max = int(copy_params.get("primary_text_max_length_chars", 140))
     url = "https://agentrvm.com"
     generated: list[dict[str, Any]] = []
-    blueprints = ANGLE_BLUEPRINTS[:limit]
+    blueprints = [apply_creative_strategy(blueprint, optimize) for blueprint in ANGLE_BLUEPRINTS[:limit]]
     if use_claude:
         claude_variants = generate_copy_variants_with_claude(blueprints=blueprints, optimize=optimize)
         if claude_variants:

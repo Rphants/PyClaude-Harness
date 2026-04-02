@@ -25,6 +25,13 @@
     "curiosity_elements": 2,
     "number_of_variations": 12
   },
+  "creative_strategy": {
+    "headline_style": "operator",
+    "body_style": "operator",
+    "proof_style": "signal",
+    "cta_style": "listen",
+    "scene_style": "documentary"
+  },
   "audience_params": {
     "primary_interests": ["real estate wholesaling", "real estate investing", "fix and flip", "rental property"],
     "age_range_min": 25,

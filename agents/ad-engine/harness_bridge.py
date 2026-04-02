@@ -326,6 +326,65 @@ def propose() -> Proposal:
     # Heuristics for proposing changes
     proposals = []
 
+    # Creative strategy: mutate the actual copy/layout search space first.
+    if config.get("creative_strategy"):
+        strategy = config["creative_strategy"]
+
+        if strategy.get("headline_style") != "threat":
+            proposals.append(Proposal(
+                hypothesis="Threat-framed hooks should sharpen first-mover urgency and improve Meta hook quality.",
+                change_description="Switch headline style to threat framing",
+                section="creative_strategy",
+                old_value=json.dumps(strategy),
+                new_value=json.dumps({**strategy, "headline_style": "threat"}),
+                expected_impact="Higher hook clarity and first-mover pressure in headlines",
+                priority=1,
+            ))
+
+        if strategy.get("body_style") != "competitive":
+            proposals.append(Proposal(
+                hypothesis="Competitive body framing should make seller-signal speed and callback timing more explicit.",
+                change_description="Switch body style to competitive framing",
+                section="creative_strategy",
+                old_value=json.dumps(strategy),
+                new_value=json.dumps({**strategy, "body_style": "competitive"}),
+                expected_impact="Stronger seller-signal and competitor-reactivity language",
+                priority=1,
+            ))
+
+        if strategy.get("proof_style") != "callback":
+            proposals.append(Proposal(
+                hypothesis="Callback-oriented proof should improve the evaluator's proof-device score.",
+                change_description="Switch proof style to callback proof",
+                section="creative_strategy",
+                old_value=json.dumps(strategy),
+                new_value=json.dumps({**strategy, "proof_style": "callback"}),
+                expected_impact="Better proof clarity and Meta copy score",
+                priority=2,
+            ))
+
+        if strategy.get("cta_style") != "speed":
+            proposals.append(Proposal(
+                hypothesis="Speed-led CTAs should align better with first-mover positioning than passive listen CTAs.",
+                change_description="Switch CTA style to speed command",
+                section="creative_strategy",
+                old_value=json.dumps(strategy),
+                new_value=json.dumps({**strategy, "cta_style": "speed"}),
+                expected_impact="Sharper CTA framing and better concept separation",
+                priority=2,
+            ))
+
+        if strategy.get("scene_style") != "war-room":
+            proposals.append(Proposal(
+                hypothesis="War-room scene styling should produce more operator-native visuals for wholesalers.",
+                change_description="Switch scene style to war-room intensity",
+                section="creative_strategy",
+                old_value=json.dumps(strategy),
+                new_value=json.dumps({**strategy, "scene_style": "war-room"}),
+                expected_impact="More distinctive operator context in rendered scenes",
+                priority=3,
+            ))
+
     # Creative parameter tuning
     if config.get("creative_params"):
         cp = config["creative_params"]
@@ -393,7 +452,7 @@ def propose() -> Proposal:
                 old_value=json.dumps(bp),
                 new_value=json.dumps({**bp, "daily_budget_usd": 75}),
                 expected_impact="Lead volume +30%, CPL possibly -2%",
-                priority=4,
+                priority=9,
             ))
 
     # Sort by priority, then filter out already-tried proposals
