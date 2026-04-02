@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from harness.proposer import (
     analyze_failures,
     generate_proposals,
     load_experiment_history,
+    propose_with_claude,
 )
 from harness.evaluator import DetailedEvaluation, run_evaluation
 from harness.orchestrator import RESULTS_FILE, apply_proposal, init_results_file
@@ -113,6 +115,36 @@ class TestGenerateProposals:
         descs = {p.change_description for p in proposals}
         assert "Add tool usage examples to SYSTEM_PROMPT" not in descs
         assert "Add explicit think-then-act structure to prompt" not in descs
+
+
+class TestProposeWithClaude:
+    def _make_context(self):
+        return ProposalContext(
+            current_config={},
+            eval_metrics={
+                "task_completion_rate": 0.95,
+                "avg_token_efficiency": 10000,
+                "tool_accuracy": 0.95,
+            },
+            experiment_history=[],
+            failed_experiments=[],
+            codebase_summary="test",
+            task_failures=[],
+        )
+
+    def test_falls_back_when_claude_returns_invalid_json(self, monkeypatch, capsys):
+        class Result:
+            returncode = 0
+            stdout = json.dumps({"result": "not valid json"})
+
+        monkeypatch.setattr("harness.proposer.subprocess.run", lambda *args, **kwargs: Result())
+
+        proposals = propose_with_claude(self._make_context())
+
+        assert proposals
+        assert proposals[0].change_description == "Reduce token budget to improve efficiency"
+        captured = capsys.readouterr()
+        assert "Claude proposer failed" in captured.err
 
 
 # ---------------------------------------------------------------------------
