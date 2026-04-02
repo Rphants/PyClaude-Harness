@@ -17,6 +17,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+try:
+    from PIL import Image
+except ImportError:  # pragma: no cover - preflight should catch missing Pillow
+    Image = None
+
 AGENT_DIR = Path(__file__).resolve().parent
 EXPERIMENTS_DIR = AGENT_DIR / "experiments"
 OPTIMIZE_FILE = AGENT_DIR / "optimize.json"
@@ -445,7 +450,16 @@ Rules:
 
 def generate_scene(scene_prompt: str, output_path: Path) -> None:
     if output_path.exists():
-        return
+        if Image is None:
+            if output_path.stat().st_size > 1024:
+                return
+        else:
+            try:
+                with Image.open(output_path) as existing:
+                    existing.verify()
+                return
+            except Exception:
+                output_path.unlink(missing_ok=True)
     provider = os.environ.get("AD_SCENE_PROVIDER", "google_stitch").strip().lower()
     if provider in {"local_gpu", "local-gpu", "gpu"}:
         script_path = LOCAL_GPU_SCENE_SCRIPT
