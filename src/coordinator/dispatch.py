@@ -43,6 +43,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+import shlex
+
 from .cmux import JsonlMux, DEFAULT_CMUX_PATH, _utc_now
 from .monitor import is_dispatchable, KNOWN_AGENTS
 from .heartbeat import emit_heartbeat
@@ -136,49 +138,63 @@ def generate_launch_command(
     1. Emits a STARTING heartbeat
     2. Runs the agent
     3. Emits a DONE/FAILED heartbeat based on exit code
+
+    All user-supplied strings are shell-escaped via shlex.quote().
     """
+    # Sanitize all user-controlled inputs
+    safe_agent = shlex.quote(agent)
+    safe_task = shlex.quote(task)
+    safe_task_short = shlex.quote(task[:80])
+    safe_task_shorter = shlex.quote(f"EXIT $EXIT_CODE: {task[:60]}")
+    safe_corr = shlex.quote(correlation_id)
+
     hb_base = (
         f'python -m src.coordinator.heartbeat '
-        f'--sender {agent} '
-        f'--correlation-id {correlation_id}'
+        f'--sender {safe_agent} '
+        f'--correlation-id {safe_corr}'
     )
 
-    branch_flag = f" --branch {branch}" if branch else ""
+    branch_flag = f" --branch {shlex.quote(branch)}" if branch else ""
 
     # Build the agent command
     if brief_path:
+        safe_brief = shlex.quote(brief_path)
         if "codex" in runner:
-            agent_cmd = f'{runner} "$(cat {brief_path})"'
+            agent_cmd = f'{runner} "$(cat {safe_brief})"'
         else:
-            agent_cmd = f'{runner} "$(cat {brief_path})" --dangerously-skip-permissions'
+            agent_cmd = f'{runner} "$(cat {safe_brief})" --dangerously-skip-permissions'
     else:
         if "codex" in runner:
-            agent_cmd = f'{runner} "{task}"'
+            agent_cmd = f'{runner} {safe_task}'
         else:
-            agent_cmd = f'{runner} "{task}" --dangerously-skip-permissions'
+            agent_cmd = f'{runner} {safe_task} --dangerously-skip-permissions'
+
+    # Comment-safe versions (strip shell metacharacters for comments only)
+    comment_task = task[:80].replace('\n', ' ').replace('"', "'")
+    comment_agent = agent.replace('\n', ' ')
 
     script = textwrap.dedent(f"""\
-        # === COWORK DISPATCH: {agent} ===
-        # Task: {task}
+        # === COWORK DISPATCH: {comment_agent} ===
+        # Task: {comment_task}
         # Correlation: {correlation_id}
         # Runner: {runner}
         cd ~/Downloads/PyClaude-Harness
 
         # Heartbeat: STARTING
-        {hb_base} --status working --claim "{task[:80]}"{branch_flag} --proof idea
+        {hb_base} --status working --claim {safe_task_short}{branch_flag} --proof idea
 
         # Run agent
-        {agent_cmd} 2>&1 | tee /tmp/{agent}-run.log
+        {agent_cmd} 2>&1 | tee /tmp/{safe_agent}-run.log
         EXIT_CODE=$?
 
         # Heartbeat: DONE or FAILED
         if [ $EXIT_CODE -eq 0 ]; then
-            {hb_base} --status done --claim "{task[:80]}"{branch_flag} --proof worktree-pass
+            {hb_base} --status done --claim {safe_task_short}{branch_flag} --proof worktree-pass
         else
-            {hb_base} --status blocked --claim "EXIT $EXIT_CODE: {task[:60]}"{branch_flag}
+            {hb_base} --status blocked --claim {safe_task_shorter}{branch_flag}
         fi
 
-        echo "=== {agent} dispatch complete (exit $EXIT_CODE) ==="
+        echo "=== {comment_agent} dispatch complete (exit $EXIT_CODE) ==="
     """)
 
     return script

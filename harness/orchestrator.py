@@ -46,6 +46,14 @@ def init_results_file() -> None:
         RESULTS_FILE.write_text("commit\tcomposite_score\ttasks_completed\tstatus\tdescription\n")
 
 
+def _has_baseline() -> bool:
+    """Check if results.tsv already has a baseline row (avoid duplicates)."""
+    if not RESULTS_FILE.exists():
+        return False
+    text = RESULTS_FILE.read_text()
+    return "\tbaseline\n" in text or "\tbaseline" in text.rstrip().split("\n")[-1]
+
+
 def get_git_hash() -> str:
     """Get current short git hash."""
     try:
@@ -105,17 +113,13 @@ def apply_proposal(proposal: Proposal, config_path: Path = OPTIMIZE_FILE) -> boo
     """Apply a proposal's changes to the config file.
 
     Reads optimize.json, updates the section specified by the proposal,
-    and writes the result back.
+    and writes the result back. Handles combined section names like
+    "TOKEN_BUDGET + CONTEXT_STRATEGY" by applying changes to each.
     """
     try:
         config = json.loads(config_path.read_text())
     except (FileNotFoundError, json.JSONDecodeError) as exc:
         print(f"Failed to read config: {exc}", file=sys.stderr)
-        return False
-
-    section_key = proposal.section.lower()
-    if section_key not in config:
-        print(f"Unknown config section: {proposal.section}", file=sys.stderr)
         return False
 
     # Parse new_value as JSON if possible, otherwise use as raw string
@@ -124,7 +128,35 @@ def apply_proposal(proposal: Proposal, config_path: Path = OPTIMIZE_FILE) -> boo
     except (json.JSONDecodeError, TypeError):
         new_val = proposal.new_value
 
-    config[section_key] = new_val
+    # Build a mapping of lowercase config keys for fuzzy matching
+    config_keys_lower = {k.lower(): k for k in config}
+
+    # Handle combined sections like "TOKEN_BUDGET + CONTEXT_STRATEGY"
+    raw_sections = [s.strip().lower() for s in proposal.section.split("+")]
+
+    matched_any = False
+    for section_key in raw_sections:
+        # Try exact match first, then underscore-to-camel variants
+        actual_key = config_keys_lower.get(section_key)
+
+        if actual_key is None:
+            # Try common mappings: TOKEN_BUDGET → token_budget, SYSTEM_PROMPT → system_prompt
+            actual_key = config_keys_lower.get(section_key.replace("_", ""))
+        if actual_key is None:
+            print(f"Skipping unknown config section: {section_key}", file=sys.stderr)
+            continue
+
+        # If new_val is a dict, merge keys instead of replacing the whole section
+        if isinstance(new_val, dict) and isinstance(config.get(actual_key), dict):
+            config[actual_key].update(new_val)
+        else:
+            config[actual_key] = new_val
+        matched_any = True
+
+    if not matched_any:
+        print(f"No matching config sections for: {proposal.section}", file=sys.stderr)
+        return False
+
     config_path.write_text(json.dumps(config, indent=2) + "\n")
     return True
 
@@ -211,11 +243,12 @@ def run_optimization_loop(
     baseline_eval = run_evaluation()
     baseline_commit = get_git_hash()
 
-    log_result(
-        baseline_commit, baseline_score,
-        f"{baseline_eval.metrics.tasks_completed}/{baseline_eval.metrics.total_tasks}",
-        "keep", "baseline"
-    )
+    if not _has_baseline():
+        log_result(
+            baseline_commit, baseline_score,
+            f"{baseline_eval.metrics.tasks_completed}/{baseline_eval.metrics.total_tasks}",
+            "keep", "baseline"
+        )
 
     if verbose:
         print(f"Baseline composite_score: {baseline_score:.6f}", file=sys.stderr)
@@ -266,8 +299,14 @@ def run_optimization_loop(
                 print(f"KEPT: {result['score']:.6f} (+{result['delta']:.6f})", file=sys.stderr)
             # Update baseline eval for next iteration
             baseline_eval = run_evaluation()
+        elif result["status"] == "error":
+            if verbose:
+                print(f"ERROR: {result.get('message', 'unknown error')}", file=sys.stderr)
+        elif result["status"] == "crash":
+            if verbose:
+                print(f"CRASHED: {result.get('error', 'unknown')} — rolled back", file=sys.stderr)
         elif verbose:
-            print(f"DISCARDED: {result['score']:.6f} ({result['delta']:+.6f})", file=sys.stderr)
+            print(f"DISCARDED: {result.get('score', 0.0):.6f} ({result.get('delta', 0.0):+.6f})", file=sys.stderr)
 
     if verbose:
         print(f"\nFinal best: {current_best:.6f} (started at {baseline_score:.6f})", file=sys.stderr)

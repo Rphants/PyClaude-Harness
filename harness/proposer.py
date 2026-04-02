@@ -206,19 +206,33 @@ Output a JSON object with:
             capture_output=True, text=True, timeout=120,
         )
         if result.returncode == 0:
-            # Parse Claude's response and convert to Proposal
-            response = json.loads(result.stdout)
+            # Claude Code --output-format json returns an envelope:
+            #   {"type":"result", "result":"<claude's text response>", ...}
+            # The actual proposal JSON is inside the "result" string field.
+            envelope = json.loads(result.stdout)
+            inner_text = envelope.get("result", "")
+
+            # Extract JSON from Claude's response (may be wrapped in ```json blocks)
+            inner_text = inner_text.strip()
+            if "```json" in inner_text:
+                inner_text = inner_text.split("```json", 1)[1]
+                inner_text = inner_text.split("```", 1)[0]
+            elif "```" in inner_text:
+                inner_text = inner_text.split("```", 1)[1]
+                inner_text = inner_text.split("```", 1)[0]
+
+            response = json.loads(inner_text.strip())
             return [Proposal(
                 hypothesis=response.get("hypothesis", "Claude-proposed change"),
-                change_description=response.get("change", ""),
+                change_description=response.get("change", response.get("change_description", "")),
                 section=response.get("section", "SYSTEM_PROMPT"),
                 old_value="",
-                new_value=response.get("code_diff", ""),
-                expected_impact="Claude-estimated",
+                new_value=response.get("code_diff", response.get("new_value", "")),
+                expected_impact=response.get("expected_impact", "Claude-estimated"),
                 priority=1,
             )]
-    except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError) as exc:
-        print(f"Claude proposer failed: {exc}")
+    except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError, KeyError) as exc:
+        print(f"Claude proposer failed: {exc}", file=sys.stderr)
 
     # Fall back to rule-based proposals
     return generate_proposals(context)

@@ -67,7 +67,8 @@ def run_evaluation(config_path: str = "optimize.json",
         task_results.append(result)
 
     # Compute metrics from already-collected results (avoid evaluating twice)
-    metrics = _metrics_from_results(task_results)
+    # Pass tasks so F1 recall denominator uses expected_tools correctly
+    metrics = _metrics_from_results(task_results, tasks=tasks)
 
     # Analyze failures
     failure_analysis = []
@@ -95,8 +96,14 @@ def run_evaluation(config_path: str = "optimize.json",
     )
 
 
-def _metrics_from_results(results: list[TaskResult]) -> EvalMetrics:
-    """Compute EvalMetrics from already-collected TaskResults (no re-evaluation)."""
+def _metrics_from_results(results: list[TaskResult],
+                          tasks: list[Any] | None = None) -> EvalMetrics:
+    """Compute EvalMetrics from already-collected TaskResults (no re-evaluation).
+
+    Uses the same F1 (harmonic mean of precision + recall) formula as
+    prepare.evaluate_all() to avoid score disagreement between evaluator
+    and ground truth.
+    """
     if not results:
         return EvalMetrics(
             task_completion_rate=0.0, avg_token_efficiency=0.0,
@@ -107,9 +114,33 @@ def _metrics_from_results(results: list[TaskResult]) -> EvalMetrics:
     failed = [r for r in results if not r.completed]
     task_completion_rate = len(completed) / len(results)
     avg_tokens = statistics.mean(r.tokens_used for r in results)
+
+    # Tool accuracy: F1 (harmonic mean of precision and recall)
+    # — matches prepare.evaluate_all() exactly
     total_calls = sum(len(r.tools_called) for r in results)
     unnecessary_calls = sum(len(r.unnecessary_tools) for r in results)
-    tool_accuracy = 1.0 - (unnecessary_calls / max(total_calls, 1))
+    correct_calls = total_calls - unnecessary_calls
+
+    # If tasks are provided, use their expected_tools for recall denominator
+    if tasks is not None:
+        total_expected = sum(
+            len(t.expected_tools) if hasattr(t, 'expected_tools') else 0
+            for t in tasks
+        )
+    else:
+        # Fallback: approximate from tools_called (assume all non-unnecessary were expected)
+        total_expected = correct_calls
+
+    if total_expected == 0 and total_calls == 0:
+        tool_accuracy = 1.0
+    else:
+        precision = correct_calls / max(total_calls, 1)
+        recall = correct_calls / max(total_expected, 1)
+        if precision + recall > 0:
+            tool_accuracy = 2 * precision * recall / (precision + recall)
+        else:
+            tool_accuracy = 0.0
+
     avg_latency = statistics.mean(r.wall_seconds for r in results)
     return EvalMetrics(
         task_completion_rate=task_completion_rate,

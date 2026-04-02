@@ -16,8 +16,8 @@ echo "   ✓ Evaluation completed:"
 python3 -c "import json; e = json.load(open('/tmp/eval.json')); print(f\"     - Composite score: {e.get('composite_score', 'N/A')}\"); print(f\"     - Return code: {e.get('returncode', 'N/A')}\")"
 echo ""
 
-echo "3. Testing autoresearch.py --propose"
-python3 autoresearch.py --propose-only 2>&1 | head -10 || echo "   ✓ (method may vary)"
+echo "3. Testing autoresearch.py --dry-run (1 experiment)"
+python3 autoresearch.py --max-experiments 1 --dry-run 2>&1 | head -10 || echo "   ✓ (method may vary)"
 echo ""
 
 echo "4. Testing autoresearch.py --dry-run (2 experiments)"

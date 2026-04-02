@@ -154,7 +154,11 @@ def apply_proposal(proposal: Proposal) -> bool:
     except (json.JSONDecodeError, TypeError):
         new_val = proposal.new_value
 
-    config[section_key] = new_val
+    # Merge keys into the section if both are dicts; otherwise replace
+    if isinstance(config[section_key], dict) and isinstance(new_val, dict):
+        config[section_key].update(new_val)
+    else:
+        config[section_key] = new_val
     return save_config(config)
 
 
@@ -216,14 +220,26 @@ def load_brain() -> str:
         return "No AGENT-BRAIN.md found yet."
 
 
+def _load_tried_descriptions() -> set[str]:
+    """Read results.tsv and return the set of already-tried change descriptions."""
+    tried: set[str] = set()
+    if RESULTS_FILE.exists():
+        for line in RESULTS_FILE.read_text().splitlines()[1:]:  # skip header
+            parts = line.split("\t")
+            if len(parts) >= 5:
+                tried.add(parts[4])
+    return tried
+
+
 def propose() -> Proposal:
     """Generate a proposal based on current state.
 
-    Reads optimize.json and AGENT-BRAIN.md, proposes a concrete change
-    to one parameter that should improve creative performance.
+    Reads optimize.json, AGENT-BRAIN.md, and results.tsv (for history).
+    Skips proposals whose change_description has already been tried.
     """
     config = load_config()
     brain = load_brain()
+    tried = _load_tried_descriptions()
 
     # Heuristics for proposing changes
     proposals = []
@@ -298,16 +314,17 @@ def propose() -> Proposal:
                 priority=4,
             ))
 
-    # Sort by priority
+    # Sort by priority, then filter out already-tried proposals
     proposals.sort(key=lambda p: p.priority)
+    proposals = [p for p in proposals if p.change_description not in tried]
 
     if proposals:
         return proposals[0]
 
-    # Fallback: no-op proposal
+    # Fallback: no-op proposal (signals exhaustion to the loop)
     return Proposal(
-        hypothesis="Baseline holds stable",
-        change_description="No change (baseline)",
+        hypothesis="All heuristic proposals exhausted",
+        change_description="No change — proposals exhausted",
         section="prompt_template",
         old_value="(current)",
         new_value="(current)",
@@ -324,54 +341,6 @@ def log_result(commit: str, composite_score: float, cpl: float | None,
     line = f"{commit}\t{composite_score:.6f}\t{cpl_str}\t{decision}\t{description}\n"
     with open(RESULTS_FILE, "a") as f:
         f.write(line)
-
-
-def run_single_experiment(proposal: Proposal) -> dict[str, Any]:
-    """Run a single experiment: apply, evaluate, keep or discard.
-
-    Returns experiment result dict.
-    """
-    description = proposal.change_description
-
-    # Apply the proposal
-    if not apply_proposal(proposal):
-        return {
-            "status": "error",
-            "message": f"Failed to apply proposal: {description}",
-        }
-
-    # Commit
-    if not git_commit(f"experiment: {description}"):
-        return {
-            "status": "error",
-            "message": "Failed to commit",
-        }
-
-    commit = get_git_hash()
-
-    # Evaluate
-    try:
-        eval_result = evaluate()
-        composite_score = eval_result.get("composite_score", 0.0)
-        cpl = eval_result.get("campaign_performance", {}).get("cpl")
-    except Exception as exc:
-        log_result(commit, 0.0, None, "crash", description)
-        git_rollback()
-        return {
-            "status": "crash",
-            "error": str(exc),
-            "commit": commit,
-        }
-
-    # For now, we're treating creative readiness as the score
-    # In production, this would be based on actual Meta API data
-    return {
-        "status": "keep",  # Simplified for now
-        "commit": commit,
-        "composite_score": composite_score,
-        "cpl": cpl,
-        "description": description,
-    }
 
 
 # ---------------------------------------------------------------------------

@@ -5,7 +5,7 @@
   "creative_params": {
     "image_width_px": 1200,
     "image_height_px": 628,
-    "color_palette": ["#1F2937", "#3B82F6", "#FFFFFF", "#F59E0B"],
+    "color_palette": ["#0a0a0a", "#FF8800", "#FFFFFF", "#FFB84D"],
     "headline_font_size_px": 56,
     "primary_text_font_size_px": 32,
     "cta_font_size_px": 24,

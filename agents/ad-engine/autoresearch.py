@@ -247,6 +247,11 @@ def run_optimization_loop(
             logger.error(f"Proposal generation failed: {exc}")
             break
 
+        # Stop if proposer has exhausted all heuristic proposals
+        if proposal.change_description == "No change — proposals exhausted":
+            logger.info("All proposals exhausted. Stopping loop.")
+            break
+
         # Run experiment
         try:
             result = run_single_experiment(proposal, current_best, dry_run=dry_run)
