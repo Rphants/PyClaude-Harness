@@ -138,6 +138,45 @@ def save_config(config: dict[str, Any]) -> bool:
         return False
 
 
+def parse_json_payload(raw: str) -> dict[str, Any]:
+    """Extract the last JSON object from noisy stdout."""
+    raw = raw.strip()
+    if not raw:
+        raise json.JSONDecodeError("empty output", raw, 0)
+
+    parsed: dict[str, Any] | None = None
+    for line in raw.splitlines():
+        candidate = line.strip()
+        if not candidate.startswith("{"):
+            continue
+        try:
+            loaded = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(loaded, dict):
+            parsed = loaded
+
+    if parsed is not None:
+        return parsed
+
+    decoder = json.JSONDecoder()
+    best_match = None
+    for index, char in enumerate(raw):
+        if char != "{":
+            continue
+        try:
+            candidate, end = decoder.raw_decode(raw[index:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(candidate, dict):
+            if best_match is None or end > best_match[0]:
+                best_match = (end, candidate)
+
+    if best_match is None:
+        raise json.JSONDecodeError("no JSON object found", raw, 0)
+    return best_match[1]
+
+
 def apply_proposal(proposal: Proposal) -> bool:
     """Apply a proposal's changes to optimize.json.
 
@@ -198,10 +237,8 @@ def evaluate() -> dict[str, Any]:
                 "stderr": result.stderr,
             }
 
-        # Parse the JSON output
         try:
-            parsed = json.loads(result.stdout.strip())
-            return parsed
+            return parse_json_payload(result.stdout)
         except json.JSONDecodeError as exc:
             print(f"Failed to parse evaluate.py JSON output: {exc}", file=sys.stderr)
             print(f"Raw stdout: {result.stdout[:500]}", file=sys.stderr)
@@ -246,7 +283,7 @@ def generate_training_batch(render: bool = True) -> dict[str, Any]:
         }
 
     try:
-        payload = json.loads(result.stdout.strip())
+        payload = parse_json_payload(result.stdout)
     except json.JSONDecodeError as exc:
         return {"ok": False, "error": f"creative batch json parse error: {exc}"}
 

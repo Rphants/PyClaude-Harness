@@ -44,7 +44,7 @@ fi
 # --- 4. Python deps ---
 echo "[4/7] Installing Python dependencies..."
 COMMON_PY_DEPS=(pytest Pillow requests certifi)
-GPU_PY_DEPS=(diffusers accelerate transformers safetensors sentencepiece)
+GPU_PY_DEPS=(diffusers==0.30.3 accelerate transformers==4.44.2 safetensors sentencepiece)
 
 pip install "${COMMON_PY_DEPS[@]}" --break-system-packages 2>/dev/null || pip install "${COMMON_PY_DEPS[@]}"
 
