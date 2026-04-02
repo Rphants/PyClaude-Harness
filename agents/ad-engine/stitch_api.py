@@ -172,6 +172,8 @@ def healthcheck() -> dict[str, Any]:
     project_from_gcloud = None
     token_ok = False
     token_error = None
+    project_access_ok = False
+    project_access_error = None
 
     if gcloud_path:
         account_result = subprocess.run(
@@ -204,6 +206,27 @@ def healthcheck() -> dict[str, Any]:
         token_ok = token_result.returncode == 0 and bool(token_result.stdout.strip())
         token_error = None if token_ok else (token_result.stderr.strip() or "token mint failed")
 
+        if project_id:
+            access_result = subprocess.run(
+                [
+                    "gcloud",
+                    "services",
+                    "list",
+                    "--enabled",
+                    f"--project={project_id}",
+                    "--filter=name:aiplatform.googleapis.com",
+                    "--format=value(name)",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=20,
+            )
+            project_access_ok = access_result.returncode == 0 and "aiplatform.googleapis.com" in access_result.stdout
+            project_access_error = None if project_access_ok else (
+                access_result.stderr.strip() or "Vertex AI API unavailable or inaccessible for project"
+            )
+
     return {
         "provider": "google_stitch",
         "configured_project_id": project_id,
@@ -214,7 +237,9 @@ def healthcheck() -> dict[str, Any]:
         "gcloud_active_project": project_from_gcloud,
         "access_token_ready": token_ok,
         "access_token_error": token_error,
-        "ready": bool(project_id and gcloud_path and token_ok),
+        "project_access_ready": project_access_ok,
+        "project_access_error": project_access_error,
+        "ready": bool(project_id and gcloud_path and token_ok and project_access_ok),
     }
 
 
@@ -271,4 +296,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

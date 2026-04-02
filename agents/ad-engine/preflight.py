@@ -70,9 +70,47 @@ def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text())
 
 
+def google_stitch_status() -> dict[str, Any]:
+    script_path = AGENT_DIR / "stitch_api.py"
+    status: dict[str, Any] = {
+        "script_present": file_present(script_path),
+        "ready": False,
+    }
+    if not status["script_present"]:
+        status["error"] = "stitch_api.py missing"
+        return status
+
+    result = command_status([sys.executable, str(script_path), "healthcheck"], timeout=30)
+    if not result["ok"] or not result["stdout"]:
+        status["error"] = result["stderr"] or "stitch healthcheck failed"
+        return status
+
+    try:
+        payload = json.loads(result["stdout"])
+    except json.JSONDecodeError:
+        status["error"] = "stitch healthcheck returned invalid JSON"
+        status["raw_output"] = result["stdout"]
+        return status
+
+    status.update(
+        {
+            "ready": bool(payload.get("ready")),
+            "configured_project_id": payload.get("configured_project_id"),
+            "gcloud_active_account": payload.get("gcloud_active_account"),
+            "gcloud_active_project": payload.get("gcloud_active_project"),
+            "access_token_ready": payload.get("access_token_ready"),
+            "access_token_error": payload.get("access_token_error"),
+            "project_access_ready": payload.get("project_access_ready"),
+            "project_access_error": payload.get("project_access_error"),
+        }
+    )
+    return status
+
+
 def build_report(mode: str) -> dict[str, Any]:
     config = load_json(CONFIG_PATH)
     knowledge_manifest = load_json(KNOWLEDGE_MANIFEST_PATH)
+    stitch = google_stitch_status()
 
     gcloud_account = command_status(
         ["gcloud", "auth", "list", "--filter=status:ACTIVE", "--format=value(account)"]
@@ -131,15 +169,7 @@ def build_report(mode: str) -> dict[str, Any]:
             "script_present": file_present(AGENT_DIR / "figma_api.py"),
             "ready": file_present(AGENT_DIR / "figma_api.py") and secrets["FIGMA_ACCESS_TOKEN"],
         },
-        "google_stitch": {
-            "script_present": file_present(AGENT_DIR / "stitch_api.py"),
-            "ready": (
-                file_present(AGENT_DIR / "stitch_api.py")
-                and secrets["GOOGLE_STITCH_PROJECT_ID"]
-                and tooling["gcloud"]
-                and tooling["gcloud_access_token_ready"]
-            ),
-        },
+        "google_stitch": stitch,
         "meta_ads": {
             "script_present": file_present(AGENT_DIR / "meta_ads.py"),
             "ready": file_present(AGENT_DIR / "meta_ads.py") and secrets["META_ACCESS_TOKEN"],
@@ -214,6 +244,12 @@ def build_report(mode: str) -> dict[str, Any]:
             warnings.append(
                 "The active gcloud project does not match GOOGLE_STITCH_PROJECT_ID."
             )
+    if stitch_project and not providers["google_stitch"]["ready"]:
+        stitch_error = providers["google_stitch"].get("project_access_error") or providers["google_stitch"].get(
+            "access_token_error"
+        )
+        if stitch_error:
+            warnings.append(f"Google Stitch healthcheck failed: {stitch_error}")
 
     if tooling["gcloud"] and not tooling["gcloud_access_token_ready"]:
         warnings.append(
@@ -288,4 +324,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
